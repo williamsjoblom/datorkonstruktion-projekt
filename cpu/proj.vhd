@@ -38,7 +38,6 @@ architecture Behavioral of proj is
   signal ASR : unsigned(15 downto 0); -- Address Register
   signal IR : unsigned(15 downto 0); -- Instruction Register
   signal DATA_BUS : unsigned(15 downto 0); -- Data Bus
-	
 
 begin
 
