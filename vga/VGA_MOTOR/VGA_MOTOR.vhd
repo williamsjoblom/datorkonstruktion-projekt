@@ -399,7 +399,7 @@ begin
     if rising_edge(clk) then
       if rst='1' then
 	ClkDiv <= (others => '0');
-      else
+      else        
 	ClkDiv <= ClkDiv + 1;
       end if;
     end if;
