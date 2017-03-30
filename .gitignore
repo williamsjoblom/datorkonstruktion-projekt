@@ -1,1 +1,3 @@
 assembler/__pycache__/*
+assembler/*~
+**/*.pyc
