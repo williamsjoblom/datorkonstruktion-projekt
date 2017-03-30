@@ -58,7 +58,7 @@ architecture Behavioral of proj is
   signal PM : unsigned(15 downto 0); -- Program Memory output
   signal PC : unsigned(15 downto 0); -- Program Counter
   signal ASR : unsigned(15 downto 0); -- Address Register
-  signal IR : unsigned(15 downto 0); -- Instruction Register
+  signal IR : unsigned(7 downto 0); -- Instruction Register
   signal DATA_BUS : unsigned(15 downto 0); -- Data Bus
 
   -- Registers
@@ -114,7 +114,7 @@ begin
   
   -- TB : To Bus
   DATA_BUS <=
-    IR when TBsig = "0001" else
+    "00000000" & IR when TBsig = "0001" else
     PM when TBsig = "0010" else
     PC when TBsig = "0011" else
     "00000000" & PC(15 downto 8) when TBsig = "0100" else
@@ -139,12 +139,12 @@ begin
       elsif FBsig = "0010" then
         -- Implement writing to memory
       elsif FBsig = "0101" then
-        SP <= DATA_BUS;
+        SP <= DATA_BUS(7 downto 0) & DATA_BUS(15 downto 8);
       elsif FBsig = "0110" then
         SP(15 downto 8) <= DATA_BUS(7 downto 0);
-      elsif FBsig = "0110" then
+      elsif FBsig = "1000" then
         X <= DATA_BUS(7 downto 0);
-      elsif FBsig = "0111" then
+      elsif FBsig = "1001" then
         Y <= DATA_BUS(7 downto 0);
       end if;
     end if;
@@ -157,7 +157,7 @@ begin
       if rst = '1' then
         PC <= (others => '0');
       elsif FBsig = "0011" then
-        PC <= DATA_BUS;
+        PC <= DATA_BUS(7 downto 0) & DATA_BUS(15 downto 8);
       elsif FBsig = "0100" then
         PC(15 downto 8) <= DATA_BUS(7 downto 0);
       elsif PCsig = '1' then
@@ -250,6 +250,8 @@ begin
         if OVERFLOW = '0' then
           uPC <= UADDRsig;
         end if;
+      elsif SEQsig = b"1111" then
+        uPC <= uPC - 1;
       end if;
     end if;
   end process;
@@ -261,7 +263,7 @@ begin
       if (rst = '1') then
         IR <= (others => '0');
       elsif (FBsig = "0001") then
-        IR <= DATA_BUS;
+        IR <= DATA_BUS(7 downto 0);
       end if;
     end if;
   end process;
@@ -298,8 +300,8 @@ begin
   
   U3 : addrVec port map(addrAddr=>ADDRADDRsig, addrVector=>ADDRVECsig);     
 
-  OPADDRsig <= PM(7 downto 3);
-  ADDRADDRsig <= PM(2 downto 0);
+  OPADDRsig <= IR(7 downto 3);
+  ADDRADDRsig <= IR(2 downto 0);
   
   -- micro memory signal assignments
   UADDRsig      <= uM(7 downto 0);

@@ -16,7 +16,7 @@ type addrVec_t is array (0 to 7) of unsigned(7 downto 0);
 constant addrVec_c : addrVec_t :=
   (x"03",                               -- Immediate
    x"04",                               -- Absolute
-   x"00",
+   x"07",                               -- ZP Absolute
    x"00",
    x"00",
    x"00",
