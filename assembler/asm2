@@ -1,2 +1,2 @@
-LDA $FF;
+LDA $FF
 STA #$FFFF

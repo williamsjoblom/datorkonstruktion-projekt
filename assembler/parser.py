@@ -1,84 +1,91 @@
-from __future__ import print_function
-from lexer import *
+# Expectation from correct syntax for each row:
+# - Labels comes first. could be more than one in theory.
+# - OP code comes after label.
+# - Operands comes last.
+# - Defined labels must end with ":"
+# - 
+import os
 
-opCodes = ['adc','and','asl','bit',\
-'clc','clv','cmp','dex','eor','inx','jmp','jsr','lda','lsr',\
-'nop','ora','pha','pla','rts','sbc','sec','sta','tax','txa','tay','tya']
-
-branch = ['bcs','beq','bmi','bne','bpl','bvs']
-labels = []
-
-def parse(list):
-    saveIndex = 0
-    comment = False
-    hexnumber = False
-    decnumber = False
-    for token in list:
-        index = token.index
-
-        if token.str == "endofline":
-            token.type = TokenType.END
-            comment = False
-
-        elif comment and token.index == saveIndex:
-            token.type = TokenType.COMMENT
-
-        elif comment and token.index != saveIndex:
-            comment = False
-
-        elif token.isComment():
-            token.type = TokenType.COMMENT
-            saveIndex = token.index
-            comment = True
+numeric = '0123456789'
+alpha = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
 
-        elif token.str in branch:
-            token.type = TokenType.BRANCH
+class Operand():
+    name = None
+    line = None
 
-        elif token.str in opCodes:
-            token.type = TokenType.OPCODE
+class Label():
+    name = None
+    line = None
+    def __init__(self, name = "", line = -1):
+        self.name = name
+        self.line = line
+
+# Parse functions, one for each type.
+
+# Parse label returns given label and the rest of the line.
+def parse_label(line, label_list):
+    rest = None
+    result, rest = read(line, str.isalpha)
+    
+    if not isOP(result) && rest[0] == ':':
+        label_list.append(Label(result))
+        parse_label(rest[1:],label_list)
+    else:
+        return (label_list,result+rest)
+
+    
+def parse_line(line):
+    tokens, rest = parse_label(line,label_list = [])
+ 
+def isOP(string):
+    opCodes = ['adc','and','asl','bit','clc','clv',\
+               'cmp','dex','eor','inx','jmp','jsr',\
+               'lda','lsr','bcs','beq','bmi','bne',\
+               'bpl','bvs','nop','ora','pha','pla',\
+               'rts','sbc','sec','sta','tax','txa',\
+               'tay','tya']
+    return string in opCodes
+
+# Returns tuple with first elemen is part of line that is true in func.
+def read(line, func):
+    length = 0
+
+    while length < len(line) and func(line[length]):
+        length += 1
+    
+    result = line[:length]
+    rest = line[length:].strip()
+
+    return (result, rest)
+    
 
 
-        elif token.type == TokenType.DOLLAR:
-            hexnumber = True
-        elif hexnumber:
-            if token.isHex():
-                token.type = TokenType.HEXA
-                hexnumber = False
-            else:
-                token.type = TokenType.ERR
-                hexnumber = False
 
-        elif token.isDec():
-            token.type = TokenType.DECI
-            token.str = convertToHex(token.str)
 
-        elif token.isLabel():
-            token.type = TokenType.LABEL
-            labels.append(token.str[:-1])
 
-        elif token.str in labels:
-            token.type = TokenType.REF
+# Returns a list containing each line of _file.
+def read_file(_file):
+    lines = []
+    with open(_file) as open_file:
+        for line in open_file:
+            curr_line = line.strip()
+            curr_line = curr_line.upper()
+            lines.append(curr_line)
+    return lines
 
-        elif token.str == "x":
-            token.type = TokenType.XREG
-
-        elif token.str == "y":
-            token.type = TokenType.YREG
-
-def convertToHex(string):
-    return hex(int(string))[2:]
 
 def main():
-    tokens = lexer("asm")
+    a = read_file("asm3")
+    for line in a:
+        print line
 
-    parseTokens(tokens)
+    asd = '11112222 '
+    d = read(asd, str.isalpha)
+    if d[0] == None:
+        print "None"
+    print d
 
-    for token in tokens:
-        token.printself()
 
-
-
-
-if __name__ == "__main__":
+if __name__=="__main__":
     main()
