@@ -26,10 +26,10 @@ constant opVec_c : opVec_t :=
    x"3C",                               -- ORA
    x"3D",                               -- EOR
    x"3E",                               -- ASL
-   x"00",
-   x"00",
-   x"00",
-   x"00",
+   x"41",                               -- LSR
+   x"44",                               -- INX
+   x"45",                               -- DEX
+   x"46",                               -- JMP
    x"00",
    x"00",
    x"00",

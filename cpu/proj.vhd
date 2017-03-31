@@ -18,6 +18,16 @@ architecture Behavioral of proj is
          uData : out unsigned(28 downto 0));
   end component;
 
+  component mmu
+    port(
+      clk     : in std_logic;
+      we      : in std_logic;
+      addr    : in unsigned(15 downto 0);
+      dataIn  : in unsigned(7 downto 0);
+      dataOut : out unsigned(15 downto 0)
+      );
+  end component;
+  
   -- program Memory component
   component pMem
     port(pAddr : in unsigned(15 downto 0);
@@ -123,6 +133,8 @@ begin
     "00000000" & A(7 downto 0)  when TBsig = "0111" else
     "00000000" & X  when TBsig = "1000" else
     "00000000" & Y  when TBsig = "1001" else
+    "00000000" & X + 1  when TBsig = "1010" else
+    "00000000" & X - 1  when TBsig = "1011" else 
     "00000000" & UADDRsig when TBsig = "1101" else
     ASR when TBsig = "1110" else
     "00000000" & ASR(15 downto 8) when TBsig = "1111" else
@@ -155,9 +167,9 @@ begin
   begin
     if rising_edge(clk) then
       if rst = '1' then
-        PC <= (others => '0');
+        PC <= PM;
       elsif FBsig = "0011" then
-        PC <= DATA_BUS(7 downto 0) & DATA_BUS(15 downto 8);
+        PC <= DATA_BUS;
       elsif FBsig = "0100" then
         PC(15 downto 8) <= DATA_BUS(7 downto 0);
       elsif PCsig = '1' then
@@ -219,37 +231,52 @@ begin
       elsif SEQsig = b"1000" then
         if ZERO = '1' then
           uPC <= UADDRsig;
+        else
+          uPC <= uPC + 1;
         end if;
         
       elsif SEQsig = b"1001" then
         if SIGN = '1' then
           uPC <= UADDRsig;
+        else
+          uPC <= uPC + 1;
         end if;
         
       elsif SEQsig = b"1010" then
         if CARRY = '1' then
           uPC <= UADDRsig;
+        else
+          uPC <= uPC + 1;
         end if;
         
       elsif SEQsig = b"1011" then
         if OVERFLOW = '1' then
           uPC <= UADDRsig;
+        else
+          uPC <= uPC + 1;
         end if;
         
       elsif SEQsig = b"1100" then
         if LC = 0 then
           uPC <= UADDRsig;
+        else
+          uPC <= uPC + 1;
         end if;
         
       elsif SEQsig = b"1101" then
         if CARRY = '0' then
           uPC <= UADDRsig;
+        else
+          uPC <= uPC + 1;
         end if;
         
       elsif SEQsig = b"1110" then
         if OVERFLOW = '0' then
           uPC <= UADDRsig;
+        else
+          uPC <= uPC + 1;
         end if;
+        
       elsif SEQsig = b"1111" then
         uPC <= uPC - 1;
       end if;
@@ -273,7 +300,7 @@ begin
   begin
     if rising_edge(clk) then
       if (rst = '1') then
-        ASR <= (others => '0');
+        ASR <= x"FFFE";
       elsif (FBsig = "1110") then
         ASR <= DATA_BUS;
       elsif FBsig = "1111" then
@@ -293,12 +320,22 @@ begin
   -- micro memory component connection
   U0 : uMem port map(uAddr=>uPC, uData=>uM);
 
+  U1 : mmu port map (
+    clk => clk,
+    we => '0',
+    addr => ASR,
+    dataIn => (others => '0'),
+    dataOut => PM
+  );
+  
   -- program memory component connection
-  U1 : pMem port map(pAddr=>ASR, pData=>PM);
+  --U1 : pMem port map(pAddr=>ASR, pData=>PM);
 
   U2 : opVec port map(opAddr=>OPADDRsig, opVector=>OPVECsig);
   
-  U3 : addrVec port map(addrAddr=>ADDRADDRsig, addrVector=>ADDRVECsig);     
+  U3 : addrVec port map(addrAddr=>ADDRADDRsig, addrVector=>ADDRVECsig);
+
+  
 
   OPADDRsig <= IR(7 downto 3);
   ADDRADDRsig <= IR(2 downto 0);
