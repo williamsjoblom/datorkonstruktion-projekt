@@ -30,12 +30,12 @@ constant opVec_c : opVec_t :=
    x"44",                               -- INX
    x"45",                               -- DEX
    x"46",                               -- JMP
-   x"00",
-   x"00",
-   x"00",
-   x"00",
-   x"00",
-   x"00",
+   x"47",                               -- STA
+   x"48",                               -- PHA
+   x"49",                               -- PLA
+   x"4B",                               -- JSR
+   x"4F",                               -- RTS
+   x"51",                               -- CMP
    x"00",
    x"00",
    x"00",

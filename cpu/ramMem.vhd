@@ -6,10 +6,16 @@ use IEEE.NUMERIC_STD.ALL;               -- IEEE library for the unsigned type
 -- entity
 entity ramMem is
   port ( clk		: in std_logic;
-         we		: in std_logic;
-         dataIn	        : in unsigned(7 downto 0);
-         dataOut	: out unsigned(15 downto 0);
-         addr	        : in unsigned(12 downto 0));
+         
+         wr1		: in std_logic;
+         data1In	: in unsigned(7 downto 0);
+         data1Out	: out unsigned(15 downto 0);
+         addr1	        : in unsigned(12 downto 0);
+         
+         wr2		: in std_logic;
+         data2In	: in unsigned(7 downto 0);
+         data2Out	: out unsigned(15 downto 0);
+         addr2	        : in unsigned(12 downto 0));
 end ramMem;
 
 	
@@ -24,13 +30,19 @@ architecture Behavioral of ramMem is
 
 begin
 
+  data1Out <= mem(to_integer(addr1 + 1)) & mem(to_integer(addr1));
+  data2Out <= mem(to_integer(addr2 + 1)) & mem(to_integer(addr2));
+  
   process(clk)
   begin
     if rising_edge(clk) then
-      if (we = '1') then
-        mem(to_integer(addr)) <= dataIn;
+      if (wr1 = '1') then
+        mem(to_integer(addr1)) <= data1In;
       end if;
-      dataOut <= mem(to_integer(addr + 1)) & mem(to_integer(addr));
+
+      if (wr2 = '1') then
+        mem(to_integer(addr2)) <= data2In;
+      end if;
     end if;
   end process;
 
