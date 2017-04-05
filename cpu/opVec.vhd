@@ -36,16 +36,17 @@ constant opVec_c : opVec_t :=
    x"4B",                               -- JSR
    x"4F",                               -- RTS
    x"51",                               -- CMP
-   x"00",
-   x"00",
-   x"00",
-   x"00",
-   x"00",
-   x"00",
-   x"00",
-   x"00",
-   x"00",
-   x"00");
+   x"52",                               -- BCS
+   x"54",                               -- BEQ
+   x"56",                               -- BMI
+   x"58",                               -- BNE
+   x"5A",                               -- BPL
+   x"5C",                               -- BIT
+   x"5D",                               -- LDX
+   x"5E",                               -- LDY
+   x"5F",                               -- STX
+   x"60"                                -- STY
+   );
 
   signal opVec : opVec_t := opVec_c;
 
