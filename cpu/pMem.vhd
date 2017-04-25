@@ -13,16 +13,12 @@ architecture Behavioral of pMem is
 
 -- program Memory
 type p_mem_t is array (0 to 15) of unsigned(7 downto 0);
-constant p_mem_c : p_mem_t :=
-(
+constant p_mem_c : p_mem_t := (
 x"08",
-x"0d",
-x"a8",
-x"0d",
-x"a8",
-x"0c",
-x"a8",
-x"0e",
+x"ff",
+x"81",
+x"00",
+x"02",
 x"78",
 x"00",
 x"e0",
@@ -30,8 +26,12 @@ x"00",
 x"00",
 x"00",
 x"00",
-x"E0"
+x"00",
+x"00",
+x"00",
+x"e0"
 );
+
 
   signal p_mem : p_mem_t := p_mem_c;
 

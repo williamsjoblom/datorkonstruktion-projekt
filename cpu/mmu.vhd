@@ -15,7 +15,9 @@ entity mmu is
     rWr   : in std_logic;
     rAddr : in unsigned(15 downto 0);
     rIn   : in unsigned(7 downto 0);
-    rOut  : out unsigned(15 downto 0)
+    rOut  : out unsigned(15 downto 0);
+
+    Led   : out std_logic_vector(7 downto 0)
     );
 end mmu;
 
@@ -42,11 +44,18 @@ architecture Behavioral of mmu is
   signal romOut : unsigned(15 downto 0);
 
   signal ramWr : std_logic;
+
+  signal ledState : std_logic_vector(7 downto 0) := x"00";
+  
 begin  -- MMU
 
   dataOut <= ramOut when addr(15 downto 13) = "000" else romOut;
 
   ramWr <= wr when addr(15 downto 13) = "000" else '0';
+
+  ledState <= std_logic_vector(dataIn) when wr = '1' and addr = x"200" else ledState;
+
+  Led <= ledState;
        
   U1 : ramMem port map (
     clk  => clk,

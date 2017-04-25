@@ -6,7 +6,7 @@ use IEEE.NUMERIC_STD.ALL;
 entity proj is
   port(clk: in std_logic;
        rst: in std_logic;
-       foobar: out std_logic);          -- To be removed, placeholder output.
+       Led: out std_logic_vector(7 downto 0));          -- To be removed, placeholder output.
 end proj ;
 
 architecture Behavioral of proj is
@@ -38,7 +38,8 @@ architecture Behavioral of proj is
       rWr   : in std_logic;
       rAddr : in unsigned(15 downto 0);
       rIn   : in unsigned(7 downto 0);
-      rOut  : out unsigned(15 downto 0)
+      rOut  : out unsigned(15 downto 0);
+      Led   : out std_logic_vector(7 downto 0)
       );
   end component;
 
@@ -392,8 +393,6 @@ begin
     end if;
   end process;
 
-  foobar <= '0';
-
   --CARRY <= A(8);
   --ZERO <= '1' when A = 0 else '0';
   --OVERFLOW <= '0';                      -- To be implemented
@@ -413,7 +412,9 @@ begin
     rWr => SWR,
     rAddr => SP,
     rIn  => DATA_BUS(7 downto 0),
-    rOut => TOP
+    rOut => TOP,
+
+    Led => Led
   );
 
   U2 : opVec port map(opAddr=>OPADDRsig, opVector=>OPVECsig);
