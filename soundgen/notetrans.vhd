@@ -9,51 +9,26 @@ entity notetrans is
        ch0: in std_logic;
        ch1: in std_logic;
        rdy: in std_logic;
+       rst: in std_logic;
        wr_enable: in std_logic;
        in_data: in unsigned(7 downto 0);
        out_data: out unsigned(7 downto 0)
-       )
+       );
 end notetrans;
 
 architecture Behavioral of notetrans is
 
   -- Internal signals
-  signal ch_int : std_logic_vector(2 downto 0);
-  signal FC : std_logic := 0;           -- Fine/Course
-  alias addr : std_logic_vector(6 downto 0) is in_data(6 downto 4) & in_data(3 downto 0);
-  signal noteVector : std_logic_vector(9 downto 0) := x"0";
+  signal addr : unsigned(7 downto 0) := x"00";
+  signal noteVector : unsigned(9 downto 0) := b"0000000000";
+  signal rdy_pulse : std_logic := '0';
+  signal rdy_wait : std_logic := '0';
+  signal int_count : unsigned(1 downto 0) := b"00";  -- keeps track of send order.
 
-type noteVec_t is array (143 down to 0) of unsigned(9 downto 0);
+
+type noteVec_t is array (0 to 143) of unsigned(9 downto 0);
 -- each line contains "00_00000000"
 --                     coarse_fine
-
-
-  -- Channel Register.
-process(clk) begin
-   if rising_edge(clk) then
-     if rst = '1' then
-       ch_int <= x"0";
-     else
-       if wr_enable = '1' then
-         ch_int[0] <= ch0;
-         ch_int[1] <= ch1;
-         ch_int[2] <= FC;
-       end if;
-     end if;
-   end if;
-end process;
-
--- Write Sequence unit.
-process(clk) begin
-   if rising_edge(clk) then
-     
-
-
-end process;
-   
-
-
-
 constant noteVec_c : noteVec_t :=
   (b"1011111100",	--C0
    b"1011010001",	-- C#0/Db0 
@@ -67,10 +42,10 @@ constant noteVec_c : noteVec_t :=
    b"0111000110",	--A0
    b"0110101100",	-- A#0/Bb0 
    b"0110010100",	--B0
-   b"0",
-   b"0",
-   b"0",
-   b"0",
+   b"0000000000",
+   b"0000000000",
+   b"0000000000",
+   b"0000000000",
    b"0101111110",	--C1
    b"0101101000",	-- C#1/Db1 
    b"0101010100",	--D1
@@ -83,10 +58,10 @@ constant noteVec_c : noteVec_t :=
    b"0011100011",	--A1
    b"0011010110",	-- A#1/Bb1 
    b"0011001010",	--B1
-   b"0",
-   b"0",
-   b"0",
-   b"0",
+   b"0000000000",
+   b"0000000000",
+   b"0000000000",
+   b"0000000000",
    b"0010111111",	--C2
    b"0010110100",	-- C#2/Db2 
    b"0010101010",	--D2
@@ -99,10 +74,10 @@ constant noteVec_c : noteVec_t :=
    b"0001110001",	--A2
    b"0001101011",	-- A#2/Bb2 
    b"0001100101",	--B2
-   b"0",
-   b"0",
-   b"0",
-   b"0",
+   b"0000000000",
+   b"0000000000",
+   b"0000000000",
+   b"0000000000",
    b"0001011111",	--C3
    b"0001011010",	-- C#3/Db3 
    b"0001010101",	--D3
@@ -115,10 +90,10 @@ constant noteVec_c : noteVec_t :=
    b"0000111000",	--A3
    b"0000110101",	-- A#3/Bb3 
    b"0000110010",	--B3
-   b"0",
-   b"0",
-   b"0",
-   b"0",
+   b"0000000000",
+   b"0000000000",
+   b"0000000000",
+   b"0000000000",
    b"0000101111",	--C4
    b"0000101101",	-- C#4/Db4 
    b"0000101010",	--D4
@@ -131,10 +106,10 @@ constant noteVec_c : noteVec_t :=
    b"0000011100",	--A4
    b"0000011010",	-- A#4/Bb4 
    b"0000011001",	--B4
-   b"0",
-   b"0",
-   b"0",
-   b"0",
+   b"0000000000",
+   b"0000000000",
+   b"0000000000",
+   b"0000000000",
    b"0000101111",	--C5
    b"0000101101",	-- C#5/Db5 
    b"0000101010",	--D5
@@ -147,10 +122,10 @@ constant noteVec_c : noteVec_t :=
    b"0000011100",	--A5
    b"0000011010",	-- A#5/Bb5 
    b"0000011001",	--B5
-   b"0",
-   b"0",
-   b"0",
-   b"0",
+   b"0000000000",
+   b"0000000000",
+   b"0000000000",
+   b"0000000000",
    b"0000001011",	--C6
    b"0000001011",	-- C#6/Db6 
    b"0000001010",	--D6
@@ -163,10 +138,10 @@ constant noteVec_c : noteVec_t :=
    b"0000000111",	--A6
    b"0000000110",	-- A#6/Bb6 
    b"0000000110",	--B6
-   b"0",
-   b"0",
-   b"0",
-   b"0",
+   b"0000000000",
+   b"0000000000",
+   b"0000000000",
+   b"0000000000",
    b"0000000101",	--C7
    b"0000000101",	-- C#7/Db7 
    b"0000000101",	--D7
@@ -179,10 +154,10 @@ constant noteVec_c : noteVec_t :=
    b"0000000011",	--A7
    b"0000000011",	-- A#7/Bb7 
    b"0000000011",	--B7
-   b"0",
-   b"0",
-   b"0",
-   b"0",
+   b"0000000000",
+   b"0000000000",
+   b"0000000000",
+   b"0000000000",
    b"0000000010",	--C8
    b"0000000010",	-- C#8/Db8 
    b"0000000010",	--D8
@@ -194,16 +169,87 @@ constant noteVec_c : noteVec_t :=
    b"0000000001",	-- G#8/Ab8 
    b"0000000001",	--A8
    b"0000000001",	-- A#8/Bb8 
-   b"0000000001"	--B8
-   b"0",
-   b"0",
-   b"0",
-   b"0",
+   b"0000000001",	--B8
+   b"0000000000",
+   b"0000000000",
+   b"0000000000",
+   b"0000000000"
    );
-  
+
   signal noteVec : noteVec_t := noteVec_c;
 
+BEGIN
+
+process (clk)
+begin  -- process   (Kan vara fel här..)
+  if rising_edge(clk) then
+    if rst = '1' then
+      rdy_wait <= '0';
+    end if;
+
+    rdy_pulse <= '0';
+    
+    if rdy = '1' and rdy_wait = '0' then 
+     rdy_pulse <= '1';
+     rdy_wait <= '1';
+
+    elsif rdy = '0' and rdy_wait = '1' then
+      rdy_wait <= '0';
+    end if;
+     
+  end if;
+end process;
+
+  
+-- purpose: WSU
+process (clk)
 begin
-  noteVector <= noteVec(to_integer(addr));
+  if rising_edge(clk) then
+    if rst = '1' then
+      int_count <= b"00";
+      out_data <= x"FF";
+    else
+
+      
+      
+      if rdy_pulse = '1' then
+        if int_count = b"00" then
+          int_count <= b"01";
+          out_data <= b"00000" & ch0 & ch1 & '0';
+          
+        elsif int_count = b"01" then
+          int_count <= b"10";
+          out_data <= noteVector(7 downto 0);
+
+        elsif int_count = b"10" then
+          int_count <= b"11";
+          out_data <= b"00000" & ch0 & ch1 & '1';
+
+        elsif int_count = b"11" then
+          int_count <= b"00";
+          out_data <= b"000000" & noteVector(9 downto 8);
+        else
+          out_data <= x"FF";
+          
+        end if;
+      end if;
+    end if;
+  end if;
+end process;
+
+
+process (clk)
+begin  -- process
+  if rising_edge(clk) then
+    if rst = '1' then
+      addr <= x"00";
+    else
+      addr <= in_data;
+      
+    end if;
+  end if;
+end process;
+
+  noteVector <= noteVec(to_integer(in_data(3 downto 0) & in_data(7 downto 4)));
 
 end Behavioral;
