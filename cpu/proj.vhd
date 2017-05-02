@@ -6,7 +6,18 @@ use IEEE.NUMERIC_STD.ALL;
 entity proj is
   port(clk: in std_logic;
        rst: in std_logic;
+
+       Hsync : out std_logic;                        -- horizontal sync
+       Vsync : out std_logic;                        -- vertical sync
+       vgaRed : out std_logic_vector(2 downto 0);   -- VGA red
+       vgaGreen : out std_logic_vector(2 downto 0);     -- VGA green
+       vgaBlue : out std_logic_vector(2 downto 1);     -- VGA blue
+
+       IO_P : out std_logic_vector(19 downto 0);
+       IO_N : out std_logic_vector(19 downto 0);
+       
        Led: out std_logic_vector(7 downto 0));          -- To be removed, placeholder output.
+  
 end proj ;
 
 architecture Behavioral of proj is
@@ -39,6 +50,10 @@ architecture Behavioral of proj is
       rAddr : in unsigned(15 downto 0);
       rIn   : in unsigned(7 downto 0);
       rOut  : out unsigned(15 downto 0);
+      IO_P : out std_logic_vector(19 downto 0);
+      IO_N : out std_logic_vector(19 downto 0);
+      vgaAddr : in unsigned(13 downto 0);       
+      vgaDataOut : out std_logic_vector(7 downto 0);
       Led   : out std_logic_vector(7 downto 0)
       );
   end component;
@@ -52,7 +67,24 @@ architecture Behavioral of proj is
     port(addrAddr : in unsigned(2 downto 0);
          addrVector : out unsigned(7 downto 0));
   end component;
-
+	
+  -- VGA motor component
+  component vgaMotor
+    port ( clk			: in std_logic;                         -- system clock
+           rst			: in std_logic;                         -- reset
+           data			: in std_logic_vector(7 downto 0);      -- data
+           addr			: out unsigned(13 downto 0);            -- address
+           vgaRed		: out std_logic_vector(2 downto 0);     -- VGA red
+           vgaGreen	        : out std_logic_vector(2 downto 0);     -- VGA green
+           vgaBlue		: out std_logic_vector(2 downto 1);     -- VGA blue
+           Hsync		: out std_logic;                        -- horizontal sync
+           Vsync		: out std_logic);                       -- vertical sync
+  end component;
+	
+  -- intermediate signals between PICT_MEM and VGA_MOTOR
+  signal	vgaData     : std_logic_vector(7 downto 0);         -- data
+  signal	vgaAddr	    : unsigned(13 downto 0);                -- address
+  
   -- micro memory signals
   signal uM : unsigned(28 downto 0); -- micro Memory output
   signal uPC : unsigned(7 downto 0); -- micro Program Counter
@@ -100,6 +132,8 @@ architecture Behavioral of proj is
   signal SP : unsigned(15 downto 0);    -- Stack Pointer
   signal TOP : unsigned(15 downto 0);   -- Top of stack
   signal SWR : std_logic;
+
+  signal LedTemp : std_logic_vector(7 downto 0);
   
 
 begin
@@ -118,6 +152,8 @@ begin
              '0' & CARRY & A(7 downto 1) when ALUsig = "1100" else A;
 
   CMPRESULT <= A - DATA_BUS(7 downto 0);       
+
+  
   
   process(clk)
   begin
@@ -133,14 +169,17 @@ begin
       end if;
 
       -- Set status flags
-      if ALUsig = "0001" then
+      if ALUsig = "0001" then           -- A := buss
         ZERO <= BOOL_TO_SL(ARESULT(7 downto 0) = x"00");
         SIGN <= BOOL_TO_SL(ARESULT(7) = '1');
+        
+        --Led <= std_logic_vector(DATA_BUS(7 downto 0));
+        
       elsif ALUsig = "0010" then        -- A := buss'
         ZERO <= BOOL_TO_SL(ARESULT(7 downto 0) = x"00");
         SIGN <= BOOL_TO_SL(ARESULT(7) = '1');
         
-      elsif ALUsig = "0011" then        -- Set Z if bit indexed by DATA_BUS in A is 0
+      elsif ALUsig = "0011" then        -- Set Z if bit indexed by DATA_US in A is 0
         ZERO <= BOOL_TO_SL(ARESULT(to_integer(DATA_BUS(2 downto 0))) = '0');
         
       elsif ALUsig = "0100" then        -- A := A + buss
@@ -206,7 +245,7 @@ begin
     "00000000" & UADDRsig when TBsig = "1101" else
     ASR when TBsig = "1110" else
     "00000000" & ASR(15 downto 8) when TBsig = "1111" else
-    (others => '0');
+    (others => '1');
   
   -- FB : From Bus
   WR <= '1' when FBsig = "0010" else '0';
@@ -414,12 +453,21 @@ begin
     rIn  => DATA_BUS(7 downto 0),
     rOut => TOP,
 
+    IO_P => IO_P,
+    IO_N => IO_N,
+    
+    vgaAddr => vgaAddr,
+    vgaDataOut => vgaData,
+
     Led => Led
   );
 
   U2 : opVec port map(opAddr=>OPADDRsig, opVector=>OPVECsig);
   
   U3 : addrVec port map(addrAddr=>ADDRADDRsig, addrVector=>ADDRVECsig);
+
+  -- VGA motor component connection
+  U5 : vgaMotor port map(clk=>clk, rst=>rst, data=>vgaData, addr=>vgaAddr, vgaRed=>vgaRed, vgaGreen=>vgaGreen, vgaBlue=>vgaBlue, Hsync=>Hsync, Vsync=>Vsync);
 
   OPADDRsig <= IR(7 downto 3);
   ADDRADDRsig <= IR(2 downto 0);

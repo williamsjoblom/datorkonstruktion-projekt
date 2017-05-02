@@ -29,19 +29,20 @@ architecture Behavioral of ramMem is
 
 
 begin
-
-  data1Out <= mem(to_integer(addr1 + 1)) & mem(to_integer(addr1));
-  data2Out <= mem(to_integer(addr2 + 1)) & mem(to_integer(addr2));
   
   process(clk)
   begin
     if rising_edge(clk) then
+      data1Out <= mem(to_integer(addr1 + 1)) & mem(to_integer(addr1));
+      data2Out <= mem(to_integer(addr1 + 1)) & mem(to_integer(addr1));
+      -- data2Out <= mem(to_integer(addr2(5 downto 0) + 1)) & mem(to_integer(addr2(5 downto 0)));      
+      
       if (wr1 = '1') then
         mem(to_integer(addr1)) <= data1In;
       end if;
 
       if (wr2 = '1') then
-        mem(to_integer(addr2)) <= data2In;
+        --mem(to_integer(addr2)) <= data2In;
       end if;
     end if;
   end process;
