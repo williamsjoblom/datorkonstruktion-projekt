@@ -71,6 +71,7 @@ architecture Behavioral of mmu is
 
   alias BC1 : std_logic is IO_P(0);
   alias BDIR : std_logic is IO_P(1);
+  alias RESET : std_logic is IO_P(2);
   
 begin  -- MMU
 
