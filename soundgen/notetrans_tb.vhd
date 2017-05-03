@@ -12,9 +12,9 @@ ARCHITECTURE behavior OF notetrans_tb IS
   PORT(clk: in std_logic;
        ch0: in std_logic;
        ch1: in std_logic;
-       rdy: in std_logic;
+       nte: in std_logic;
        rst: in std_logic;
-       wr_enable: in std_logic;
+       send: in std_logic;
        in_data: in unsigned(7 downto 0);
        out_data: out unsigned(7 downto 0)
        );
@@ -25,8 +25,8 @@ ARCHITECTURE behavior OF notetrans_tb IS
   signal rst : std_logic:= '0';
   signal ch0 : std_logic := '0';
   signal ch1 : std_logic := '0';
-  signal rdy : std_logic := '0';
-  signal wr_enable : std_logic := '0';
+  signal nte : std_logic := '0';
+  signal send : std_logic := '0';
   signal in_data : unsigned(7 downto 0) := x"00";
   signal out_data : unsigned(7 downto 0) := x"00";
 
@@ -40,8 +40,8 @@ BEGIN
     rst => rst,
     ch0 => ch0,
     ch1 => ch1,
-    rdy => rdy,
-    wr_enable => wr_enable,
+    nte => nte,
+    send => send,
     in_data => in_data,
     out_data => out_data
   );
@@ -65,9 +65,11 @@ BEGIN
       ch1 <= '0';
       wait for 2 us;
       in_data <= b"10010000";
+
+      nte <= '1';
       
       wait for 1 us;
-      rdy <= '1';
+       <= '1';
       wait for 1 us;
       rdy <= '0';
       wait for 1 us;

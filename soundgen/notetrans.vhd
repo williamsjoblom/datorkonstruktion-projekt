@@ -22,8 +22,13 @@ architecture Behavioral of notetrans is
   -- Internal signals
   signal addr : unsigned(7 downto 0) := x"00";
   signal noteVector : unsigned(9 downto 0) := b"0000000000";
+  
   signal nte_pulse : std_logic := '0';
   signal nte_wait : std_logic := '0';
+
+  signal send_pulse : std_logic := '0';
+  signal send_wait : std_logic := '0';
+  
   signal int_count : unsigned(1 downto 0) := b"00";  -- keeps track of send order.
   signal int_data : unsigned(7 downto 0) := x"00";  -- read when wrt and nte is high.
 
@@ -203,6 +208,34 @@ begin  -- process   (Kan vara fel här..)
      
   end if;
 end process;
+  -- Enpulsare send and note.
+begin  -- process   (Kan vara fel här..)
+  if rising_edge(clk) then
+    if rst = '1' then
+      send_wait <= '0';
+      send_pulse <= '0';
+      nte_wait <= '0';
+      nte_pulse <= '0';
+    end if;
+
+    send_pulse <= '0';
+    nte_pulse <= '0';
+
+    if nte = '1' and nte_wait = '0' then 
+     nte_pulse <= '1';
+     nte_wait <= '1';
+    elsif nte = '0' and nte_wait = '1' then
+      nte_wait <= '0';
+    end if;
+    
+    if send = '1' and send_wait = '0' then 
+     send_pulse <= '1';
+     send_wait <= '1';
+    elsif send = '0' and send_wait = '1' then
+      send_wait <= '0';
+    end if;
+  end if;
+end process;
 
 -- Reads data from in bus once, when note signals high.
 process(clk)
@@ -231,7 +264,7 @@ begin
         out_data <= b"00000" & ch0 & ch1 & '0';
       end if;
       
-      if send = '1' then 
+      if send_pulse = '1' then 
         if int_count = b"00" then
           int_count <= b"01";
           out_data <= noteVector(7 downto 0);
