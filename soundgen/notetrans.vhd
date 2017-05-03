@@ -5,14 +5,15 @@ use IEEE.NUMERIC_STD.ALL;
 -- Note Translator Interface
 
 entity notetrans is
-  port(clk: in std_logic;
-       ch0: in std_logic;
-       ch1: in std_logic;
-       rdy: in std_logic;
-       rst: in std_logic;
-       wr_enable: in std_logic;
-       in_data: in unsigned(7 downto 0);
-       out_data: out unsigned(7 downto 0)
+  port(clk: in std_logic;               -- clock (duh!)
+       ch0: in std_logic;               -- channel bit 0
+       ch1: in std_logic;               -- channel bit 1
+       send: in std_logic;              -- send
+       rst: in std_logic;               -- reset
+       nte: in std_logic;               -- note
+       wrt: in std_logic;               -- write
+       in_data: in unsigned(7 downto 0);  -- in from data-reg
+       out_data: out unsigned(7 downto 0)  -- out to write unit
        );
 end notetrans;
 
@@ -21,9 +22,10 @@ architecture Behavioral of notetrans is
   -- Internal signals
   signal addr : unsigned(7 downto 0) := x"00";
   signal noteVector : unsigned(9 downto 0) := b"0000000000";
-  signal rdy_pulse : std_logic := '0';
-  signal rdy_wait : std_logic := '0';
+  signal nte_pulse : std_logic := '0';
+  signal nte_wait : std_logic := '0';
   signal int_count : unsigned(1 downto 0) := b"00";  -- keeps track of send order.
+  signal int_data : unsigned(7 downto 0) := x"00";  -- read when wrt and nte is high.
 
 
 type noteVec_t is array (0 to 143) of unsigned(9 downto 0);
@@ -180,23 +182,38 @@ constant noteVec_c : noteVec_t :=
 
 BEGIN
 
+  -- Enpulsare write
 process (clk)
 begin  -- process   (Kan vara fel här..)
   if rising_edge(clk) then
     if rst = '1' then
-      rdy_wait <= '0';
+      nte_wait <= '0';
+      nte_pulse <= '0';
     end if;
 
-    rdy_pulse <= '0';
+    nte_pulse <= '0';
     
-    if rdy = '1' and rdy_wait = '0' then 
-     rdy_pulse <= '1';
-     rdy_wait <= '1';
+    if nte = '1' and nte_wait = '0' then 
+     nte_pulse <= '1';
+     nte_wait <= '1';
 
-    elsif rdy = '0' and rdy_wait = '1' then
-      rdy_wait <= '0';
+    elsif nte = '0' and nte_wait = '1' then
+      nte_wait <= '0';
     end if;
      
+  end if;
+end process;
+
+-- Reads data from in bus once, when note signals high.
+process(clk)
+begin
+  if rising_edge(clk) then
+    if rst = '1' then
+      int_data <= x"00";
+
+    elsif nte_pulse = '1' then
+      int_data <= in_data;
+    end if;
   end if;
 end process;
 
@@ -209,27 +226,26 @@ begin
       int_count <= b"00";
       out_data <= x"FF";
     else
-
+      -- can directly determine the first register to send when note arrives.
+      if nte_pulse = '1' then
+        out_data <= b"00000" & ch0 & ch1 & '0';
+      end if;
       
-      
-      if rdy_pulse = '1' then
+      if send = '1' then 
         if int_count = b"00" then
           int_count <= b"01";
-          out_data <= b"00000" & ch0 & ch1 & '0';
-          
-        elsif int_count = b"01" then
-          int_count <= b"10";
           out_data <= noteVector(7 downto 0);
 
-        elsif int_count = b"10" then
-          int_count <= b"11";
+        elsif int_count = b"01" then
+          int_count <= b"10";
           out_data <= b"00000" & ch0 & ch1 & '1';
 
-        elsif int_count = b"11" then
+        elsif int_count = b"10" then
           int_count <= b"00";
           out_data <= b"000000" & noteVector(9 downto 8);
         else
-          out_data <= x"FF";
+          out_data <= x"00";
+          int_count <= b"00";
           
         end if;
       end if;
@@ -238,18 +254,6 @@ begin
 end process;
 
 
-process (clk)
-begin  -- process
-  if rising_edge(clk) then
-    if rst = '1' then
-      addr <= x"00";
-    else
-      addr <= in_data;
-      
-    end if;
-  end if;
-end process;
-
-  noteVector <= noteVec(to_integer(in_data(3 downto 0) & in_data(7 downto 4)));
+  noteVector <= noteVec(to_integer(int_data(3 downto 0) & int_data(7 downto 4)));
 
 end Behavioral;
