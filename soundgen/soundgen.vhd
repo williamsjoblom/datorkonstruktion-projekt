@@ -19,18 +19,23 @@ entity soundgen is
        BC1: out std_logic;
        untranslatednote: out unsigned(7 downto 0);
        dataout: out unsigned(7 downto 0);
-       rdy: out std_logic
+       rdy: out std_logic;
        )
 end soundgen;
 
 architecture Behavioral of soundgen is
 
   -- Internal signals
-  variable wrlc : integer := 1;
-  signal note : std_logic;
+  variable lc : integer := 0;           -- lc for delay
+  signal wrote : std_logic;
+  signal nte : std_logic;
   signal datareg : unsigned(7 downto 0);
   signal writemux : std_logic;          -- multiplexed signal (note write/ write) to Write unit
   signal datamux : std_logic;           -- translatednote or data_reg to write unit
+
+  signal trigger : std_logic := '0';
+  signal trigger_wait : std_logic := '0';
+  signal trigger_pulse : std_logic := '0';
 
   -- Modes
   type wrmodes is (WR, LATCH, INACTIVE);
@@ -54,7 +59,7 @@ begin
   
 
   -- Mulitplexed signals
-  datamux <= translatednote when save = '1' else datareg;
+  datamux <= translatednote when nte = '1' else datareg;
   
   -- Data register
   process(clk)
@@ -63,54 +68,53 @@ begin
       if rst = '1' then
         datareg <= x"00";
       elsif rdy = '1' then              -- kanske inte behövs
-        datareg <= datain;
-        save <= notedata;
-        rdy <= '0';
+        if wr = '1' then                -- dubbelkolla
+          datareg <= datain;
+          nte <= notedata;
+          rdy <= '0';
+        end if;
       end if;
     end if;
   end process;
 
-  -- Write unit
-  process(clk)
-  begin
-    if rising_edge(clk) then
-      if note = '1' then            -- Send Note // (tillfällig)
-        if wrlc = '1' then              -- Latch Fine Tune Register
-          wrmode <= LATCH;
-        elsif wrlc = '2' then           -- Write Fine Tune
-          wrmode <= WR;
-        elsif wrlc = '3' then           -- Latch Coarse Tune Register
-          wrmode <= LATCH;
-        elsif wrlc = '4' then           -- Write Coarse Tune
-          wrmode <= WR;
-          wrlc <= '0';
-          rdy <= '1';
-        end if;
-        wrlc <= wrlc + 1;
-      else                              -- Send Data
-        wrmode <= WR when wr = '1' else LATCH;
-        rdy <= '1';
-      end if;
-      dataout <= datamux;               -- Note/Data Sent
-      wrmode <= INACTIVE;
-    end if;
+ 
 
   -- Write unit
   process(clk)
   begin
     if rising_edge(clk) then
-      if wr = '1' then
-        if wrlc = '1' then
-          mrmode <= LATCH;
-        
-        end if;
-        if save = '1' then
-        
-          dataout <= datamux;               -- Note/Data Sent
-          wrmode <= INACTIVE;
-        end if;
+      if wrote = '0' then
+        wrmode <= LATCH;
+        wrote <= '1';
+      elsif wrote = '1' then
+        wrmode <= WR;
+        wrote <= '0';
       end if;
+      if lc < "60" then
+        lc := lc + '1';
+      elsif lc = "60" then  
+        dataout <= datamux;               -- Note/Data Sent
+        wrmode <= INACTIVE;
+        lc := 0;
+      elsif lc < "120" then
+        lc := lc + '1';
+      end if;
+      rdy = '1';
+        
     end if;  
+  end process;
+
+
+  process(clk)
+  begin
+    if rising_edge(clk) then
+      if rst = '1' then
+        lc := 0;
+      else
+        if lc /= 0 then
+          lc := lc - 1
+    end if;
+
   
   -- Signals to Notetrans.vhd
 
@@ -118,10 +122,31 @@ begin
     ch0=>ch0,
     ch1=>ch0,
     rdy=>rdy,
-    note=>note,
+    nte=>nte,
     untranslatednote=>indata
     )                                   -- Notera att ready-signalen ska
                                         -- proj.vhd oxå?
                            
 
+
+process(clk)
+begin  -- process   (Kan vara fel här..)
+  if rising_edge(clk) then
+    if rst = '1' then
+      trigger_wait <= '0';
+      trigger_pulse <= '0';
+    end if;
+
+    trigger_pulse <= '0';
+    
+    if trigger = '1' and trigger_wait = '0' then 
+     trigger_pulse <= '1';
+     trigger_wait <= '1';
+    elsif trigger = '0' and trigger_wait = '1' then
+      trigger_wait <= '0';
+    end if;
+  end if;
+end process;
+
+    
 end Behavioral;

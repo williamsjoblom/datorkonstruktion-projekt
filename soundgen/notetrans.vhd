@@ -209,6 +209,7 @@ begin  -- process   (Kan vara fel här..)
   end if;
 end process;
   -- Enpulsare send and note.
+process(clk)
 begin  -- process   (Kan vara fel här..)
   if rising_edge(clk) then
     if rst = '1' then
