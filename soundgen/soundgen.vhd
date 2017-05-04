@@ -17,28 +17,50 @@ entity soundgen is
        
        BDIR: out std_logic;
        BC1: out std_logic;
-       untranslatednote: out unsigned(7 downto 0);
+       datareg: out unsigned(7 downto 0);
        dataout: out unsigned(7 downto 0);
-       rdy: out std_logic;
+       rdyout: out std_logic;
        )
 end soundgen;
 
 architecture Behavioral of soundgen is
+  
+  component notetrans
+    port(clk: in std_logic;               -- clock (duh!)
+         ch0: in std_logic;               -- channel bit 0
+         ch1: in std_logic;               -- channel bit 1
+         rdy: in std_logic;              -- rdy
+         rst: in std_logic;               -- reset
+         nte: in std_logic;               -- note
+         datareg: in unsigned(7 downto 0);  -- in from data-reg
+         send: out std_logic;               -- write
+         translatednote: out unsigned(7 downto 0)  -- out to write unit
+         nte_done: out std_logic;
+         );
+  end component;
 
+  
   -- Internal signals
-  variable lc : integer := 0;           -- lc for delay
-  signal wrote : std_logic;
+  variable lc : integer := '0';           -- lc for delay
+  variable nteprgs : integer := '0';
+  signal latch : std_logic := '1';
   signal nte : std_logic;
-  signal datareg : unsigned(7 downto 0);
   signal writemux : std_logic;          -- multiplexed signal (note write/ write) to Write unit
   signal datamux : std_logic;           -- translatednote or data_reg to write unit
+  signal rdy : std_logic := '1';
+  signal rdyin : std_logic := '0';
 
   signal trigger : std_logic := '0';
   signal trigger_wait : std_logic := '0';
   signal trigger_pulse : std_logic := '0';
+  signal count : std_logic := '0';
+  signal wr_state : unsigned(1 downto 0) := b"00";
+
+  signal send : std_logic := '0';
+  signal nte_done : std_logic := '0';
 
   -- Modes
-  type wrmodes is (WR, LATCH, INACTIVE);
+  type wrmodes is (INACTIVE, WR, LATCH);
   
 begin
 
@@ -55,11 +77,15 @@ begin
       BDIR <= '0';
   end case;
 
-  untranslatednote <= datareg;          -- får man göra så? osync?
+ --  untranslatednote <= datareg;          -- får man göra så? osync?
   
 
   -- Mulitplexed signals
   datamux <= translatednote when nte = '1' else datareg;
+  rdyout <= '1' when (nte = '0' and rdy = '1') else '0';
+  rdyin <= '1' when (nte = '1' and rdy = '1') else '0';
+  
+  
   
   -- Data register
   process(clk)
@@ -68,66 +94,84 @@ begin
       if rst = '1' then
         datareg <= x"00";
       elsif rdy = '1' then              -- kanske inte behövs
-        if wr = '1' then                -- dubbelkolla
+        if wr = '1' and trigger_wait = '0' then                -- DUBBELKOLLA
           datareg <= datain;
           nte <= notedata;
           rdy <= '0';
+        elsif nte_done = '1' then
+          nte <= '0';
         end if;
       end if;
     end if;
   end process;
+  
 
- 
-
-  -- Write unit
-  process(clk)
-  begin
-    if rising_edge(clk) then
-      if wrote = '0' then
-        wrmode <= LATCH;
-        wrote <= '1';
-      elsif wrote = '1' then
-        wrmode <= WR;
-        wrote <= '0';
-      end if;
-      if lc < "60" then
-        lc := lc + '1';
-      elsif lc = "60" then  
-        dataout <= datamux;               -- Note/Data Sent
-        wrmode <= INACTIVE;
-        lc := 0;
-      elsif lc < "120" then
-        lc := lc + '1';
-      end if;
-      rdy = '1';
-        
-    end if;  
-  end process;
-
-
+  -- Write Unit
   process(clk)
   begin
     if rising_edge(clk) then
       if rst = '1' then
-        lc := 0;
+        lc = 0;
       else
+        if trigger_pulse = '1' or send = '1' then
+          lc <= "240";
+          rdy <= '0';
+        end if;
+        
+        if latch = '1' then
+          if lc = "240" then
+            wrmode <= INACTIVE;
+          elsif lc = "180" then
+            wrmode <= LATCH;
+          elsif lc = "120" then
+            dataout <= datamux;
+          elsif lc = "60" then
+            rdy = '1';
+            wrmode = <= INACTIVE;
+            latch <= '0';
+          end if;
+        else
+          if lc = "240" then
+            wrmode <= INACTIVE;
+          elsif lc = "180" then
+            wrmode = <= WR;
+          elsif lc = "120" then
+            dataout <= datamux;
+            if nte = '1' then           -- note cycle tracker
+              nteprgs := nteprgs + '1';
+            end if;
+            if nteprgs = '2' then       -- reset and rdy should go high
+              nte <= '0';
+              nteprgs := '0';
+            end if;
+          elsif lc = "60" then
+            rdy = '1';
+            wrmode <= INACTIVE;
+            latch <= '1';
+          end if;
+        end if;
+        
+        
         if lc /= 0 then
-          lc := lc - 1
+          lc := lc - 1;  
+        end if;
+      end if;
     end if;
-
+  end process;
   
   -- Signals to Notetrans.vhd
 
   U0 : notetrans port map (
     ch0=>ch0,
     ch1=>ch0,
-    rdy=>rdy,
+    rdy=>rdyin,
     nte=>nte,
-    untranslatednote=>indata
+    datareg=>datareg,
+    send=>send,
+    translatednote=>translatednote,
+    nte_done=>nte_done
     )                                   -- Notera att ready-signalen ska
                                         -- proj.vhd oxå?
-                           
-
 
 process(clk)
 begin  -- process   (Kan vara fel här..)
@@ -139,10 +183,10 @@ begin  -- process   (Kan vara fel här..)
 
     trigger_pulse <= '0';
     
-    if trigger = '1' and trigger_wait = '0' then 
+    if wr = '1' and trigger_wait = '0' then 
      trigger_pulse <= '1';
      trigger_wait <= '1';
-    elsif trigger = '0' and trigger_wait = '1' then
+    elsif wr = '0' and trigger_wait = '1' then
       trigger_wait <= '0';
     end if;
   end if;
