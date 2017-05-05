@@ -1,3 +1,6 @@
+
+message: .data 'hello world'
+
 ;;; Entry
 main:
 	JSR ay_init
@@ -16,7 +19,7 @@ main:
 	LDY #$F0
 
 	;; Print SONIC BOOM
-	LDX #$13
+	LDX message
 	JSR vga_put_char
 	LDX #$0F
 	JSR vga_put_char

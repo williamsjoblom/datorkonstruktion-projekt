@@ -131,7 +131,6 @@ begin  -- MMU
   begin
     if rising_edge(clk) then
       if rst='1' then
-
         BB1 <= (others => '0');
         BB2 <= (others => '0');
       elsif wr='1' then

@@ -33,7 +33,7 @@ XILINX_INIT = source /sw/xilinx/ise_12.4i/ISE_DS/settings64.sh;
 PART=xc6slx16-3-csg324
 
 
-proj.%: S=proj.vhd uMem.vhd pMem.vhd opVec.vhd addrVec.vhd mmu.vhd ramMem.vhd pictMem.vhd vgaMotor.vhd textMode.vhd
+proj.%: S=proj.vhd uMem.vhd pMem.vhd opVec.vhd addrVec.vhd mmu.vhd ramMem.vhd pictMem.vhd vgaMotor.vhd textMode.vhd dbncr.vhd
 proj.%: T=proj_tb.vhd
 proj.%: U=Nexys3_Master.ucf
 
