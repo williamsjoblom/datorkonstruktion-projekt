@@ -27,22 +27,24 @@ architecture Behavioral of ramMem is
   -- initiate ram memory to 0x42, 0x00, 0x00, 0x00...
   signal mem : ram_t := (0 => x"42", others => (others => '0'));
 
-
+  type stack_t is array(0 to 255) of unsigned(7 downto 0);
+  signal stack_mem : stack_t := (others => (others => '0'));
+  
 begin
   
   process(clk)
   begin
     if rising_edge(clk) then
       data1Out <= mem(to_integer(addr1 + 1)) & mem(to_integer(addr1));
-      data2Out <= mem(to_integer(addr1 + 1)) & mem(to_integer(addr1));
-      -- data2Out <= mem(to_integer(addr2(5 downto 0) + 1)) & mem(to_integer(addr2(5 downto 0)));      
+      data2Out <= stack_mem(to_integer(addr2(7 downto 0) + 1)) & stack_mem(to_integer(addr2(7 downto 0)));
+      --data2Out <= mem(to_integer(addr2(5 downto 0) + 1)) & mem(to_integer(addr2(5 downto 0)));      
       
       if (wr1 = '1') then
         mem(to_integer(addr1)) <= data1In;
       end if;
 
       if (wr2 = '1') then
-        --mem(to_integer(addr2)) <= data2In;
+        stack_mem(to_integer(addr2(7 downto 0))) <= data2In;
       end if;
     end if;
   end process;

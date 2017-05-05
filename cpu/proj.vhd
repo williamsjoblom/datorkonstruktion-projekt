@@ -42,6 +42,7 @@ architecture Behavioral of proj is
   component mmu
     port(
       clk     : in std_logic;
+      rst     : in std_logic;
       wr      : in std_logic;
       addr    : in unsigned(15 downto 0);
       dataIn  : in unsigned(7 downto 0);
@@ -143,9 +144,9 @@ begin
              '0' & not DATA_BUS(7 downto 0) when ALUsig = "0010" else
              A + DATA_BUS(7 downto 0) when ALUsig = "0100" else
              A - DATA_BUS(7 downto 0) when ALUsig = "0101" else
-             '0' & A(7 downto 0) and DATA_BUS(7 downto 0) when ALUsig = "0110" else
-             '0' & A(7 downto 0) or DATA_BUS(7 downto 0) when ALUsig = "0111" else
-             '0' & A(7 downto 0) xor DATA_BUS(7 downto 0) when ALUsig = "1000" else
+             '0' & A(7 downto 0) and '0' & DATA_BUS(7 downto 0) when ALUsig = "0110" else
+             '0' & A(7 downto 0) or '0' & DATA_BUS(7 downto 0) when ALUsig = "0111" else
+             '0' & A(7 downto 0) xor '0' & DATA_BUS(7 downto 0) when ALUsig = "1000" else
              '0' & A(7 downto 0) + DATA_BUS(7 downto 0) when ALUsig = "1001" else
              '0' & A(6 downto 0) & '0' when ALUsig = "1010" else
              '0' & A(7) & A(7 downto 1) when ALUsig = "1011" else
@@ -245,8 +246,8 @@ begin
     "00000000" & UADDRsig when TBsig = "1101" else
     ASR when TBsig = "1110" else
     "00000000" & ASR(15 downto 8) when TBsig = "1111" else
-    (others => '1');
-  
+    (others => '0');
+
   -- FB : From Bus
   WR <= '1' when FBsig = "0010" else '0';
   SWR <= '1' when FBsig = "1100" else '0';
@@ -303,7 +304,7 @@ begin
   begin
     if rising_edge(clk) then
       if rst = '1' then
-        SP <= x"01FF";
+        SP <= x"00FF";
       elsif FBsig = "0101" then
         SP <= DATA_BUS(7 downto 0) & DATA_BUS(15 downto 8);
       elsif FBsig = "0110" then
@@ -428,6 +429,8 @@ begin
         ASR <= DATA_BUS;
       elsif FBsig = "1111" then
         ASR(15 downto 8) <= DATA_BUS(7 downto 0);
+      elsif FBsig = "1101" then
+        ASR <= DATA_BUS + X;
       end if;
     end if;
   end process;
@@ -443,6 +446,7 @@ begin
 
   U1 : mmu port map (
     clk => clk,
+    rst => rst,
     wr => WR,
     addr => ASR,
     dataIn => DATA_BUS(7 downto 0),

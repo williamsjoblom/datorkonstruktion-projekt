@@ -14,14 +14,14 @@ architecture Behavioral of addrVec is
 -- program Memory
 type addrVec_t is array (0 to 7) of unsigned(7 downto 0);
 constant addrVec_c : addrVec_t :=
-  (x"03",                               -- Immediate
-   x"04",                               -- Absolute
-   x"07",                               -- ZP Absolute
-   x"00",
-   x"00",
-   x"00",
-   x"00",
-   x"00");
+  (x"04",                               -- Immediate
+   x"06",                               -- Absolute
+   x"0A",                               -- ZP Absolute
+   x"0F",                               -- Absolute X
+   x"13",                               -- Indirect
+   x"19",                               -- Jump Absolute
+   x"20",                               -- Indexed Indirect
+   x"26");                              -- Indirect Indexed
 
   signal addrVec : addrVec_t := addrVec_c;
 

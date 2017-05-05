@@ -34,18 +34,18 @@ constant opVec_c : opVec_t :=
    x"48",                               -- PHA
    x"49",                               -- PLA
    x"4B",                               -- JSR
-   x"4F",                               -- RTS
-   x"51",                               -- CMP
-   x"52",                               -- BCS
-   x"54",                               -- BEQ
-   x"56",                               -- BMI
-   x"58",                               -- BNE
-   x"5A",                               -- BPL
-   x"5C",                               -- BIT
-   x"5D",                               -- LDX
-   x"5E",                               -- LDY
-   x"5F",                               -- STX
-   x"60"                                -- STY
+   x"52",                               -- RTS
+   x"55",                               -- CMP
+   x"56",                               -- BCS
+   x"58",                               -- BEQ
+   x"5A",                               -- BMI
+   x"5C",                               -- BNE
+   x"5E",                               -- BPL
+   x"60",                               -- BIT
+   x"61",                               -- LDX
+   x"62",                               -- LDY
+   x"63",                               -- STX
+   x"64"                                -- STY
    );
 
   signal opVec : opVec_t := opVec_c;
