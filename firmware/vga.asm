@@ -14,10 +14,26 @@ vga_init:
 	STA $2003
 	RTS
 
-;;; Write char in X with color Y to current cursor position
+;;; Write string pointed to by A(lsb) and Y(msb)
+vga_put_str:
+	STA $40
+	STY $41
+	LDX #0			; Init counter
+	LDY #$F0 		; Set color to black/white
+vga_put_str_loop:	
+	LDA ($40),X		; Load char
+	CMP #0			
+	BEQ vga_put_str_end
+	JSR vga_put_char
+	INX
+	JMP vga_put_str_loop
+vga_put_str_end:
+	RTS
+	
+;;; Write char in A with color Y to current cursor position
 ;;; and increment cursor.
 vga_put_char:
-	STX ($2004)
+	STA ($2004)
 	STY ($2006)
 	JSR vga_inc_cursor
 	RTS

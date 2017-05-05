@@ -37,9 +37,9 @@ entity dbncr is
       NR_OF_CLKS : integer := 4095 -- Number of System Clock periods while the incoming signal 
    );                              -- has to be stable until a one-shot output signal is generated
    port(
-      clk_i : in std_logic;
+      clk : in std_logic;
       sig_i : in std_logic;
-      pls_o : out std_logic
+      sig_o : out std_logic
    );
 end dbncr;
 
@@ -47,13 +47,13 @@ architecture Behavioral of dbncr is
 
 signal cnt : integer range 0 to NR_OF_CLKS-1;
 signal sigTmp : std_logic;
-signal stble, stbleTmp : std_logic;
+signal stble : std_logic := '0';
 
 begin
 
-   DEB: process(clk_i)
+   DEB: process(clk)
    begin
-      if rising_edge(clk_i) then
+      if rising_edge(clk) then
          if sig_i = sigTmp then -- Count the number of clock periods if the signal is stable
             if cnt = NR_OF_CLKS-1 then
                stble <= sig_i;
@@ -66,15 +66,8 @@ begin
          end if;
       end if;
    end process DEB;
-
-   PLS: process(clk_i)
-   begin
-      if rising_edge(clk_i) then
-         stbleTmp <= stble;
-      end if;
-   end process PLS;
    
    -- generate the one-shot output signal
-   pls_o <= '1' when stbleTmp = '0' and stble = '1' else '0';
+   sig_o <= stble; --'1' when stbleTmp = '0' and stble = '1' else '0';
 
 end Behavioral;

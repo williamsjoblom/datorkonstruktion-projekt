@@ -34,9 +34,9 @@ architecture Behavioral of proj is
 
   component dbncr 
    port(
-      clk_i : in std_logic;
+      clk : in std_logic;
       sig_i : in std_logic;
-      pls_o : out std_logic
+      sig_o : out std_logic
    );
   end component;      
 
@@ -483,9 +483,9 @@ begin
   U5 : vgaMotor port map(clk=>clk, rst=>rst, data=>vgaData, addr=>vgaAddr, vgaRed=>vgaRed, vgaGreen=>vgaGreen, vgaBlue=>vgaBlue, Hsync=>Hsync, Vsync=>Vsync);
 
   U6 : dbncr port map (
-      clk_i => clk,
+      clk => clk,
       sig_i => rstB,
-      pls_o => rst
+      sig_o => rst
    );
 
   OPADDRsig <= IR(7 downto 3);
