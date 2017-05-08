@@ -6,15 +6,14 @@ use IEEE.NUMERIC_STD.ALL;
 
 entity notetrans is
   port(clk: in std_logic;               -- clock (duh!)
-       ch0: in std_logic;               -- channel bit 0
-       ch1: in std_logic;               -- channel bit 1
+       ch: in unsigned(1 downto 0);               -- channel bits
        rdy: in std_logic;              -- rdy
        rst: in std_logic;               -- reset
        nte: in std_logic;               -- note
        datareg: in unsigned(7 downto 0);  -- in from data-reg
        send: out std_logic;               -- write
-       translatednote: out unsigned(7 downto 0)  -- out to write unit
-       nte_done: out std_logic;
+       translatednote: out unsigned(7 downto 0);  -- out to write unit
+       nte_done : out std_logic
        );
 end notetrans;
 
@@ -32,6 +31,7 @@ architecture Behavioral of notetrans is
   
   signal int_count : unsigned(1 downto 0) := b"00";  -- keeps track of rdy order.
   signal int_data : unsigned(7 downto 0) := x"00";  -- read when wrt and nte is high.
+  signal lookUp : unsigned(7 downto 0);
 
 
 type noteVec_t is array (0 to 143) of unsigned(9 downto 0);
@@ -226,7 +226,7 @@ begin
       int_data <= x"00";
 
     elsif nte_pulse = '1' then
-      int_data <= datareg;
+      int_data <= unsigned(datareg);
     end if;
   end if;
 end process;
@@ -236,14 +236,15 @@ end process;
 process (clk)
 begin
   if rising_edge(clk) then
-    nte_done <= '0';                    -- möjligt fel.
     if rst = '1' then
       int_count <= b"00";
       translatednote <= x"FF";
+      nte_done <= '1';
     else
       -- can directly determine the first register to rdy when note arrives.
       if nte_pulse = '1' then
-        translatednote <= b"00000" & ch0 & ch1 & '0';
+        nte_done <= '0';                    -- möjligt fel.
+        translatednote <= b"00000" & ch & '0';
         send <= '1';      
       elsif rdy_pulse = '1' then
         send <= '1';
@@ -253,7 +254,7 @@ begin
 
         elsif int_count = b"01" then
           int_count <= b"10";
-          translatednote <= b"00000" & ch0 & ch1 & '1';
+          translatednote <= b"00000" & ch & '1';
 
         elsif int_count = b"10" then
           int_count <= b"00";
@@ -269,7 +270,6 @@ begin
     end if;
   end if;
 end process;
-
 
   noteVector <= noteVec(to_integer(datareg(3 downto 0) & datareg(7 downto 4)));
 

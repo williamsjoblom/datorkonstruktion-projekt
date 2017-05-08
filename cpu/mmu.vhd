@@ -77,6 +77,21 @@ architecture Behavioral of mmu is
       colorAddr : out unsigned(13 downto 0)
       );
   end component;
+
+  component soundinterface
+   port(clk: in std_logic;
+       ch: in unsigned(1 downto 0);
+       rst: in std_logic;               -- Reset
+       datain: in unsigned(7 downto 0);  -- Bus
+       
+       wr: in std_logic;
+       
+       BDIR: out std_logic;
+       BC1: out std_logic;
+       dataout: out std_logic_vector(7 downto 0);
+       rdyout: out std_logic
+       );
+  end component;
   
   signal ramOut : unsigned(15 downto 0);
   signal romOut : unsigned(15 downto 0);
@@ -93,6 +108,12 @@ architecture Behavioral of mmu is
   signal curYWr : std_logic := '0';
   signal charAddr : unsigned(13 downto 0);
   signal colorAddr : unsigned(13 downto 0);
+
+  -----------------------------------------------------------------------------
+  signal soundWr : std_logic := '0';
+  signal ch : unsigned(1 downto 0) := (others => '1');
+  signal rdy : std_logic := '1';
+  -----------------------------------------------------------------------------
 
   signal BB1 : std_logic_vector(19 downto 0) := (others => '0');
   signal BB2 : std_logic_vector(19 downto 0) := (others => '0');
@@ -116,6 +137,11 @@ begin  -- MMU
              "01" & colorAddr when addr = x"2006" else
              "0100000000" & colorAddr(13 downto 8) when addr = x"2007" else
              
+             -- ready to write signal is lsb on addr 2015.
+             "000000000000000" & rdy when addr = x"2015" else
+
+             
+             
              romOut;
 
   ramWr <= wr when addr(15 downto 13) = "000" else '0';
@@ -123,6 +149,9 @@ begin  -- MMU
 
   curXWr <= wr when addr = x"2002" else '0';
   curYWr <= wr when addr = x"2003" else '0';
+
+  soundWr <= wr when addr(15 downto 2) = b"00100000000100" else '0';
+  ch <= addr(1 downto 0) when addr(15 downto 2) = b"00100000000100" else b"11"; 
 
   IO_P <= BB1;        
   IO_N <= BB2;
@@ -195,6 +224,21 @@ begin  -- MMU
     charAddr => charAddr,
     colorAddr => colorAddr
   );
+  
+  U5 : soundinterface port map(
+    clk => clk,
+    rst => rst,                         
+    ch => ch,
+    wr => soundWr,
+    datain=> dataIn,
+    rdyout=>rdy,
+
+    dataout => AY_DATA,
+    BDIR => AY_BDIR,
+    BC1 => AY_BC1
+  );
+    
+    
 
 
 end Behavioral;
