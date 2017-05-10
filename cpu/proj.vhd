@@ -4,8 +4,16 @@ use IEEE.NUMERIC_STD.ALL;
 
 --CPU interface
 entity proj is
+  generic(
+      RST_CLKS : integer := 4095
+   ); 
   port(clk: in std_logic;
        rstB: in std_logic;
+
+       btnUpB : in std_logic;
+       btnRightB : in std_logic; 
+       btnDownB : in std_logic;
+       btnLeftB : in std_logic;
 
        Hsync : out std_logic;                        -- horizontal sync
        Vsync : out std_logic;                        -- vertical sync
@@ -15,6 +23,8 @@ entity proj is
 
        IO_P : out std_logic_vector(19 downto 0);
        IO_N : out std_logic_vector(19 downto 0);
+
+       JD : inout std_logic_vector(7 downto 0);
        
        Led: out std_logic_vector(7 downto 0));          -- To be removed, placeholder output.
   
@@ -32,7 +42,10 @@ architecture Behavioral of proj is
     end if;
   end BOOL_TO_SL;
 
-  component dbncr 
+  component dbncr
+   generic(
+     NR_OF_CLKS : integer
+   );
    port(
       clk : in std_logic;
       sig_i : in std_logic;
@@ -62,7 +75,14 @@ architecture Behavioral of proj is
       IO_N : out std_logic_vector(19 downto 0);
       vgaAddr : in unsigned(13 downto 0);       
       vgaDataOut : out std_logic_vector(7 downto 0);
-      Led   : out std_logic_vector(7 downto 0)
+      
+      Led   : out std_logic_vector(7 downto 0);
+      JD : inout std_logic_vector(7 downto 0);
+      
+      btnUp : in std_logic;
+      btnRight : in std_logic; 
+      btnDown : in std_logic;
+      btnLeft : in std_logic
       );
   end component;
 
@@ -90,6 +110,11 @@ architecture Behavioral of proj is
   end component;
 
   signal rst : std_logic := '0';
+
+  signal btnUp : std_logic := '0';
+  signal btnRight : std_logic := '0';
+  signal btnDown : std_logic := '0';
+  signal btnLeft : std_logic := '0';
   
   -- intermediate signals between PICT_MEM and VGA_MOTOR
   signal	vgaData     : std_logic_vector(7 downto 0);         -- data
@@ -159,7 +184,7 @@ begin
              '0' & A(7 downto 0) + DATA_BUS(7 downto 0) when ALUsig = "1001" else
              '0' & A(6 downto 0) & '0' when ALUsig = "1010" else
              '0' & A(7) & A(7 downto 1) when ALUsig = "1011" else
-             '0' & CARRY & A(7 downto 1) when ALUsig = "1100" else A;
+             "00"  & A(7 downto 1) when ALUsig = "1100" else A;
 
   CMPRESULT <= A - DATA_BUS(7 downto 0);       
 
@@ -472,7 +497,13 @@ begin
     vgaAddr => vgaAddr,
     vgaDataOut => vgaData,
 
-    Led => Led
+    Led => Led,
+    JD => JD,
+
+    btnUp => btnUp,
+    btnRight => btnRight,
+    btnDown => btnDown,
+    btnLeft => btnLeft
   );
 
   U2 : opVec port map(opAddr=>OPADDRsig, opVector=>OPVECsig);
@@ -482,10 +513,46 @@ begin
   -- VGA motor component connection
   U5 : vgaMotor port map(clk=>clk, rst=>rst, data=>vgaData, addr=>vgaAddr, vgaRed=>vgaRed, vgaGreen=>vgaGreen, vgaBlue=>vgaBlue, Hsync=>Hsync, Vsync=>Vsync);
 
-  U6 : dbncr port map (
+  -- Rst debouncer
+  U6 : dbncr
+    generic map (NR_OF_CLKS => RST_CLKS)
+    port map (
       clk => clk,
       sig_i => rstB,
       sig_o => rst
+   );
+
+  -- Dpad debouncers
+  U7 : dbncr
+    generic map (NR_OF_CLKS => 8191)
+    port map (
+      clk => clk,
+      sig_i => btnUpB,
+      sig_o => btnUp
+   );
+
+  U8 : dbncr
+    generic map (NR_OF_CLKS => 8191)
+    port map (
+      clk => clk,
+      sig_i => btnRightB,
+      sig_o => btnRight
+   );
+
+  U9 : dbncr
+    generic map (NR_OF_CLKS => 8191)
+    port map (
+      clk => clk,
+      sig_i => btnDownB,
+      sig_o => btnDown
+   );
+
+  U10 : dbncr
+    generic map (NR_OF_CLKS => 8191)
+    port map (
+      clk => clk,
+      sig_i => btnLeftB,
+      sig_o => btnLeft
    );
 
   OPADDRsig <= IR(7 downto 3);

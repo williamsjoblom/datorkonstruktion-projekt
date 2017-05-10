@@ -33,7 +33,7 @@ constant opVec_c : opVec_t :=
    x"47",                               -- STA
    x"48",                               -- PHA
    x"49",                               -- PLA
-   x"4B",                               -- JSR
+   x"4D",                               -- JSR
    x"52",                               -- RTS
    x"55",                               -- CMP
    x"56",                               -- BCS
