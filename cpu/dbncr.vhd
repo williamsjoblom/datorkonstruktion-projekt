@@ -34,7 +34,7 @@ use IEEE.STD_LOGIC_1164.ALL;
 
 entity dbncr is
    generic(
-      NR_OF_CLKS : integer := 4095 -- Number of System Clock periods while the incoming signal 
+      NR_OF_CLKS : integer := 4 -- Number of System Clock periods while the incoming signal 
    );                              -- has to be stable until a one-shot output signal is generated
    port(
       clk : in std_logic;

@@ -136,11 +136,9 @@ begin  -- MMU
              
              "01" & colorAddr when addr = x"2006" else
              "0100000000" & colorAddr(13 downto 8) when addr = x"2007" else
-             
+
              -- ready to write signal is lsb on addr 2015.
              "000000000000000" & rdy when addr = x"2015" else
-
-             
              
              romOut;
 
@@ -155,8 +153,7 @@ begin  -- MMU
 
   IO_P <= BB1;        
   IO_N <= BB2;
-    
-
+  
        
   U1 : ramMem port map (
     clk  => clk,
@@ -203,7 +200,6 @@ begin  -- MMU
     charAddr => charAddr,
     colorAddr => colorAddr
   );
-  
   U5 : soundinterface port map(
     clk => clk,
     rst => rst,                         
@@ -216,8 +212,5 @@ begin  -- MMU
     BDIR => AY_BDIR,
     BC1 => AY_BC1
   );
-    
-    
-
 
 end Behavioral;

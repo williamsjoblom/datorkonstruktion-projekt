@@ -36,6 +36,6 @@ BEGIN
     wait for clk_period/2;
   end process;
 
-  rst <= '1', '0' after 15 us;
+  rst <= '1', '0' after 50 us;
 END;
 
