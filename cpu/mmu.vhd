@@ -182,7 +182,7 @@ begin  -- MMU
     --end if;
   --end process;
   
-  Led <= ledState;
+  --Led <= ledState;
        
   U1 : ramMem port map (
     clk  => clk,

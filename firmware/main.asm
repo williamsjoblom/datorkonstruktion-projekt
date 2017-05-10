@@ -1,16 +1,19 @@
 main:
-	lda #$D4
-	sta $2011
-	
 	jsr ready
-	lda #$D4
-	sta $2012
+	lda #$00
+	sta $2011
 
-	jsr readyyy
-	lda #$D1
-	sta $2010
-	
+	jsr ready
+	lda #$00
+	sta $2013
 
+	jsr ready
+	lda #$FF
+	sta $2013
+
+	jsr ready
+	lda #$00
+	sta $2011
 loop:
 	jmp loop
 
@@ -18,16 +21,4 @@ ready:
 	lda $2015
 	cmp #$01
 	bne ready
-	rts
-
-readyy:
-	lda $2015
-	cmp #$01
-	bne readyy
-	rts
-
-readyyy:
-	lda $2015
-	cmp #$01
-	bne readyyy
 	rts
