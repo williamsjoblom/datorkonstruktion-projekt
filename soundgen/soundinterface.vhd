@@ -23,14 +23,15 @@ architecture Behavioral of soundinterface is
   
   component notetrans
     port(clk: in std_logic;               -- clock (duh!)
-         ch: in unsigned(1 downto 0);               -- channel bit
+         chreg: in unsigned(1 downto 0);               -- channel bit
          rdy: in std_logic;              -- rdy
          rst: in std_logic;               -- reset
          nte: in std_logic;               -- note
          datareg: in unsigned(7 downto 0);  -- in from data-reg
          send: out std_logic;               -- write
          translatednote: out unsigned(7 downto 0);  -- out to write unit
-         nte_done: out std_logic
+         nte_done: out std_logic;
+         triggerCh: out std_logic
          );
   end component;
 
@@ -42,6 +43,7 @@ architecture Behavioral of soundinterface is
   signal nte : std_logic := '0';
 
   signal datareg: unsigned(7 downto 0) := (others => '0');
+  signal chreg : unsigned(1 downto 0) := (others => '1');
 
   signal datamux :unsigned(7 downto 0) := (others => '0');           -- translatednote or data_reg to write unit
   signal rdy : std_logic := '1';
@@ -53,6 +55,8 @@ architecture Behavioral of soundinterface is
 
   signal send : std_logic := '0';
   signal nte_done : std_logic := '1';
+  signal triggerCh : std_logic := '0';
+
 
 
   -- Write Unit Modes
@@ -61,26 +65,37 @@ architecture Behavioral of soundinterface is
   
 begin
 
+  --latchmod = 11.
+  --wrmode = 01.
+  --inactive = 00.
 
   -- BC1 & BDIR in different modes 
-  BC1 <= '1' when wrmode = LATCHMOD else '0';
-  BDIR <= '0' when wrmode = INACTIVE else '1';
+  --BC1 <= '1' when wrmode = LATCHMOD else '0';
+  --BDIR <= '0' when wrmode = INACTIVE else '1';
 
   -- Mulitplexed signals
   datamux <= translatednote when nte = '1' else datareg;
+
+  --dataout <= std_logic_vector(datamux);
+  
   rdyout <= '1' when (nte_done = '1' and rdy = '1') else '0';
   rdyin <= '1' when (nte_done = '0' and rdy = '1') else '0';
-  nte <= '0' when ch = b"11"  else '1';
+  nte <= '0' when chreg = b"11"  else '1';
   
-  -- Data register
+  -- Data register, Note register.
   process(clk)
   begin
     if rising_edge(clk) then
       if rst = '1' then
         datareg <= x"00";
-      elsif trigger_pulse = '1' then                -- rdy = '1'?
+        chreg <= b"11";
+      elsif wr = '1'and trigger_wait = '0' then                -- rdy = '1'?
         datareg <= datain(7 downto 0);
-        rdy <= '0';
+        chreg <= ch;
+      end if;
+
+      if triggerCh = '1' then
+        chreg <= b"11";
       end if;
     end if;
   end process; 
@@ -88,55 +103,64 @@ begin
   -- Write Unit
   process(clk)
    variable lc : integer := 0;           -- lc for delay
-   variable nteprgs : integer := 0;
   begin
     if rising_edge(clk) then
-      dataout <= x"00";
+      --dataout <= x"00";
       if rst = '1' then
+        dataout <= x"00";
         lc := 0;
+        BDIR <= '0';
+        BC1 <= '0';
+        rdy <= '1';
       else
-        if trigger_pulse = '1' then
-          rdy <= '0';
-        end if;
-        if trigger_pulse = '1' or send = '1' then
+        --dataout <= std_logic_vector(datamux);
+        if trigger_pulse = '1' or send = '1' then  -- feflefelfelf
           lc := 240;
+          rdy <= '0';
         end if;
         
         if latch = '1' then
           if lc = 240 then
-            wrmode <= INACTIVE;
+            
+            --wrmode <= INACTIVE;
+            BDIR <= '0';
+            BC1 <= '0';
           elsif lc = 180 then
-            wrmode <= LATCHMOD;
+            --wrmode <= LATCHMOD;
+            BDIR <= '1';
+            BC1 <= '1';
           elsif lc = 120 then
             dataout <= std_logic_vector(datamux);
           elsif lc = 60 then
             rdy <= '1';
-            wrmode <= INACTIVE;
+            --wrmode <= INACTIVE;
+            BDIR <= '0';
+            BC1 <= '0';
             latch <= '0';
           end if;
         else
           if lc = 240 then
-            wrmode <= INACTIVE;
+            --wrmode <= INACTIVE;
+            BDIR <= '0';
+            BC1 <= '0';
           elsif lc = 180 then
-            wrmode <= WRMOD;
+            --wrmode <= WRMOD;
+            BDIR <= '1';
+            BC1 <= '0';
           elsif lc = 120 then
             dataout <= std_logic_vector(datamux);
-            if nte = '1' then           -- note cycle tracker
-              nteprgs := nteprgs + 1;
-            end if;
-            if nteprgs = 2 then       -- reset and rdy should go high
-              nteprgs := 0;
-            end if;
           elsif lc = 60 then
             rdy <= '1';
-            wrmode <= INACTIVE;
+            --wrmode <= INACTIVE;
+            BDIR <= '0';
+            BC1 <= '0';
             latch <= '1';
+            
           end if;
         end if;
         
-        
         if lc /= 0 then
-          lc := lc - 1;  
+          lc := lc - 1;
         end if;
       end if;
     end if;
@@ -147,13 +171,14 @@ begin
   U0 : notetrans port map (
     clk=>clk,
     rst=>rst,
-    ch=>ch,
+    chreg=>chreg,
     rdy=>rdyin,
     nte=>nte,
     datareg=>datareg,
     send=>send,
     translatednote=>translatednote,
-    nte_done=>nte_done
+    nte_done=>nte_done,
+    triggerCh => triggerCh
     );                                  -- Notera att ready-signalen ska
                                         -- proj.vhd oxå?
 

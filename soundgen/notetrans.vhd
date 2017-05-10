@@ -6,21 +6,21 @@ use IEEE.NUMERIC_STD.ALL;
 
 entity notetrans is
   port(clk: in std_logic;               -- clock (duh!)
-       ch: in unsigned(1 downto 0);               -- channel bits
+       chreg: in unsigned(1 downto 0);               -- channel bits
        rdy: in std_logic;              -- rdy
        rst: in std_logic;               -- reset
        nte: in std_logic;               -- note
        datareg: in unsigned(7 downto 0);  -- in from data-reg
        send: out std_logic;               -- write
        translatednote: out unsigned(7 downto 0);  -- out to write unit
-       nte_done : out std_logic
+       nte_done : out std_logic;
+       triggerCh : out std_logic
        );
 end notetrans;
 
 architecture Behavioral of notetrans is
 
   -- Internal signals
-  signal addr : unsigned(7 downto 0) := x"00";
   signal noteVector : unsigned(9 downto 0) := b"0000000000";
   
   signal nte_pulse : std_logic := '0';
@@ -31,10 +31,9 @@ architecture Behavioral of notetrans is
   
   signal int_count : unsigned(1 downto 0) := b"00";  -- keeps track of rdy order.
   signal int_data : unsigned(7 downto 0) := x"00";  -- read when wrt and nte is high.
-  signal lookUp : unsigned(7 downto 0);
 
 
-type noteVec_t is array (0 to 143) of unsigned(9 downto 0);
+type noteVec_t is array (0 to 255) of unsigned(9 downto 0);
 -- each line contains "00_00000000"
 --                     coarse_fine
 constant noteVec_c : noteVec_t :=
@@ -181,7 +180,8 @@ constant noteVec_c : noteVec_t :=
    b"0000000000",
    b"0000000000",
    b"0000000000",
-   b"0000000000"
+   b"0000000000",
+   others => b"0000000000"
    );
 
   signal noteVec : noteVec_t := noteVec_c;
@@ -238,31 +238,34 @@ begin
   if rising_edge(clk) then
     if rst = '1' then
       int_count <= b"00";
-      translatednote <= x"FF";
+      translatednote <= x"00";
       nte_done <= '1';
+      triggerCh <= '0';
     else
+      triggerCh <= '0';
       -- can directly determine the first register to rdy when note arrives.
       if nte_pulse = '1' then
         nte_done <= '0';                    -- möjligt fel.
-        translatednote <= b"00000" & ch & '0';
-        send <= '1';      
-      elsif rdy_pulse = '1' then
-        send <= '1';
+        translatednote <= b"00000" & chreg & '0';    
+      elsif rdy_pulse = '1' then          
         if int_count = b"00" then
           int_count <= b"01";
           translatednote <= noteVector(7 downto 0);
+          send <= '1';
 
         elsif int_count = b"01" then
           int_count <= b"10";
-          translatednote <= b"00000" & ch & '1';
+          translatednote <= b"00000" & chreg & '1';
+          send <= '1';
 
         elsif int_count = b"10" then
-          int_count <= b"00";
+          int_count <= b"11";
           translatednote <= b"000000" & noteVector(9 downto 8);
-          nte_done <= '1';
-        else
-          translatednote <= x"00";
+          send <= '1';
+        elsif int_count = b"11" then
           int_count <= b"00";
+          nte_done <= '1';
+          triggerCh <= '1';
         end if;
       else
         send <= '0';
@@ -271,6 +274,6 @@ begin
   end if;
 end process;
 
-  noteVector <= noteVec(to_integer(datareg(3 downto 0) & datareg(7 downto 4)));
+  noteVector <= noteVec(to_integer(datareg(3 downto 0) & datareg(7 downto 4))) when nte = '1'  else b"0000000000";
 
 end Behavioral;

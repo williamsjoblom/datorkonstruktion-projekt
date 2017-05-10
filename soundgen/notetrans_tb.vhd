@@ -10,25 +10,27 @@ ARCHITECTURE behavior OF notetrans_tb IS
   --Component Declaration for the Unit Under Test (UUT)
   COMPONENT notetrans
   PORT(clk: in std_logic;
-       ch0: in std_logic;
-       ch1: in std_logic;
+       chreg: in unsigned(1 downto 0);
        nte: in std_logic;
        rst: in std_logic;
-       send: in std_logic;
-       in_data: in unsigned(7 downto 0);
-       out_data: out unsigned(7 downto 0)
+       rdy: in std_logic;
+       send: out std_logic;
+       datareg: in unsigned(7 downto 0);
+       nte_done: out std_logic;
+       translatednote: out unsigned(7 downto 0)
        );
   END COMPONENT;
 
   --Inputs
   signal clk : std_logic:= '0';
   signal rst : std_logic:= '0';
-  signal ch0 : std_logic := '0';
-  signal ch1 : std_logic := '0';
+  signal chreg : unsigned(1 downto 0) := b"11";
   signal nte : std_logic := '0';
   signal send : std_logic := '0';
-  signal in_data : unsigned(7 downto 0) := x"00";
-  signal out_data : unsigned(7 downto 0) := x"00";
+  signal datareg : unsigned(7 downto 0) := x"00";
+  signal translatednote : unsigned(7 downto 0) := x"00";
+  signal nte_done : std_logic := '1';
+  signal rdy : std_logic;
 
   --Clock period definitions
   constant clk_period : time:= 10 ns;
@@ -38,12 +40,13 @@ BEGIN
   uut: notetrans PORT MAP (
     clk => clk,
     rst => rst,
-    ch0 => ch0,
-    ch1 => ch1,
+    rdy => rdy,
+    chreg => chreg,
     nte => nte,
     send => send,
-    in_data => in_data,
-    out_data => out_data
+    translatednote => translatednote,
+    datareg => datareg,
+    nte_done => nte_done
   );
 		
   -- Clock process definitions
@@ -61,15 +64,13 @@ BEGIN
       rst <= '1';
       wait for 1 us;
       rst <= '0';
-      ch0 <= '1';
-      ch1 <= '0';
-      wait for 2 us;
-      in_data <= b"10010000";
-
       nte <= '1';
+      chreg <= b"01";
+      datareg <= b"00010001";
+      wait for 2 us;
+      rdy <= '1';
+      nte <= '0';
       
-      wait for 1 us;
-       <= '1';
       wait for 1 us;
       rdy <= '0';
       wait for 1 us;
