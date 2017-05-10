@@ -5,7 +5,7 @@ use IEEE.NUMERIC_STD.ALL;
 --CPU interface
 entity proj is
   port(clk: in std_logic;
-       rst: in std_logic;
+       rstB: in std_logic;
 
        Hsync : out std_logic;                        -- horizontal sync
        Vsync : out std_logic;                        -- vertical sync
@@ -32,6 +32,13 @@ architecture Behavioral of proj is
     end if;
   end BOOL_TO_SL;
 
+  component dbncr 
+   port(
+      clk : in std_logic;
+      sig_i : in std_logic;
+      sig_o : out std_logic
+   );
+  end component;      
 
   -- micro Memory component
   component uMem
@@ -81,7 +88,9 @@ architecture Behavioral of proj is
            Hsync		: out std_logic;                        -- horizontal sync
            Vsync		: out std_logic);                       -- vertical sync
   end component;
-	
+
+  signal rst : std_logic := '0';
+  
   -- intermediate signals between PICT_MEM and VGA_MOTOR
   signal	vgaData     : std_logic_vector(7 downto 0);         -- data
   signal	vgaAddr	    : unsigned(13 downto 0);                -- address
@@ -472,6 +481,12 @@ begin
 
   -- VGA motor component connection
   U5 : vgaMotor port map(clk=>clk, rst=>rst, data=>vgaData, addr=>vgaAddr, vgaRed=>vgaRed, vgaGreen=>vgaGreen, vgaBlue=>vgaBlue, Hsync=>Hsync, Vsync=>Vsync);
+
+  U6 : dbncr port map (
+      clk => clk,
+      sig_i => rstB,
+      sig_o => rst
+   );
 
   OPADDRsig <= IR(7 downto 3);
   ADDRADDRsig <= IR(2 downto 0);

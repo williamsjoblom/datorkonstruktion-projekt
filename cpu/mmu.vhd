@@ -156,33 +156,7 @@ begin  -- MMU
   IO_P <= BB1;        
   IO_N <= BB2;
     
-  --process(clk)
-  --begin
-    --if rising_edge(clk) then
-      --if rst='1' then
 
-      --BB1 <= (others => '0');
-      --BB2 <= (others => '0');
-     -- elsif wr='1' then
-       --  ledState <= std_logic_vector(dataIn);
-
-         --if addr = x"2000" then
-           --AY_DATA <= std_logic_vector(dataIn);
-         --elsif addr = x"2001" then
-           --AY_BC1 <= dataIn(0);
-           --AY_BDIR <= dataIn(1);
-           --AY_RESET <= dataIn(2);
-         --elsif addr(15 downto 2) = b"00100000000100" then
-           --AY_DATA <= std_logic_vector(dataIn);
-           --AY_BC1 <= dataIn(0);
-           --AY_BDIR <= dataIn(1);
-           --AY_RESET <= dataIn(2);
-         --end if;
-      --end if;
-    --end if;
-  --end process;
-  
-  --Led <= ledState;
        
   U1 : ramMem port map (
     clk  => clk,

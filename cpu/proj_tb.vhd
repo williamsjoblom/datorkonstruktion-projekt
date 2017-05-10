@@ -10,7 +10,7 @@ ARCHITECTURE behavior OF proj_tb IS
   --Component Declaration for the Unit Under Test (UUT)
   COMPONENT proj
   PORT(clk : IN std_logic;
-       rst : IN std_logic);
+       rstB : IN std_logic);
   END COMPONENT;
 
   --Inputs
@@ -24,7 +24,7 @@ BEGIN
   -- Instantiate the Unit Under Test (UUT)
   uut: proj PORT MAP (
     clk => clk,
-    rst => rst
+    rstB => rst
   );
 		
   -- Clock process definitions
@@ -36,6 +36,6 @@ BEGIN
     wait for clk_period/2;
   end process;
 
-  rst <= '1', '0' after 1.7 us;
+  rst <= '1', '0' after 15 us;
 END;
 

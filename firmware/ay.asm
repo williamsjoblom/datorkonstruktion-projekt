@@ -70,7 +70,7 @@ ay_inactive:
 
 ;;; Delay
 delay:
-	LDA #40
+	LDA #20
 next:
 	SBC #1
 	BNE next
