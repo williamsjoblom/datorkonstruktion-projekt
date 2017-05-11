@@ -163,6 +163,6 @@ constant noteVec_c : noteVec_t :=
 
 
 begin  -- noteVec
-  noteVector <= noteVec(to_integer(noteAddr(3 downto 0) & noteAddr(7 downto 4))) when nte = '1'  else x"000";
+  noteVector <= noteVec(to_integer(noteAddr(3 downto 0) & noteAddr(7 downto 4)));
 
 end Behavioral;

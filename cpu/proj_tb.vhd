@@ -9,8 +9,15 @@ ARCHITECTURE behavior OF proj_tb IS
 
   --Component Declaration for the Unit Under Test (UUT)
   COMPONENT proj
+  generic(
+      RST_CLKS : integer
+   ); 
   PORT(clk : IN std_logic;
-       rstB : IN std_logic);
+       rstB : IN std_logic;
+       btnUpB : in std_logic;
+       btnRightB : in std_logic;
+       btnDownB : in std_logic;
+       btnLeftB : in std_logic);
   END COMPONENT;
 
   --Inputs
@@ -18,13 +25,21 @@ ARCHITECTURE behavior OF proj_tb IS
   signal rst : std_logic:= '0';
 
   --Clock period definitions
-  constant clk_period : time:= 1 us;
+  constant clk_period : time:= 10 ns;
 
 BEGIN
   -- Instantiate the Unit Under Test (UUT)
-  uut: proj PORT MAP (
+  uut: proj
+    generic map (
+      RST_CLKS => 3)
+    PORT MAP (
     clk => clk,
-    rstB => rst
+    rstB => rst,
+    btnUpB => '0',
+    btnRightB => '0',
+    btnDownB => '0',
+    btnLeftB => '0'
+    
   );
 		
   -- Clock process definitions
@@ -36,6 +51,6 @@ BEGIN
     wait for clk_period/2;
   end process;
 
-  rst <= '1', '0' after 50 us;
+  rst <= '1', '0' after 15 us;
 END;
 

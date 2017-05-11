@@ -24,7 +24,13 @@ entity mmu is
     vgaAddr : in unsigned(13 downto 0);
     vgaDataOut : out std_logic_vector(7 downto 0);
 
-    Led   : out std_logic_vector(7 downto 0)
+    Led   : out std_logic_vector(7 downto 0);
+    JD : inout std_logic_vector(7 downto 0);
+
+    btnUp : in std_logic;
+    btnRight : in std_logic; 
+    btnDown : in std_logic;
+    btnLeft : in std_logic
     );
 end mmu;
 
@@ -92,10 +98,20 @@ architecture Behavioral of mmu is
        rdyout: out std_logic
        );
   end component;
+  component keypadDecoder
+    port (
+      clk : in std_logic;
+      rst : in std_logic;
+      row : in std_logic_vector(3 downto 0);
+      col : out std_logic_vector(3 downto 0);
+      decodeOut : out unsigned(4 downto 0)
+      );
+  end component;
   
   signal ramOut : unsigned(15 downto 0);
   signal romOut : unsigned(15 downto 0);
   signal pictOut : std_logic_vector(7 downto 0);
+  signal keypadOut : unsigned(4 downto 0);
 
   signal ramWr : std_logic;
   signal pictWr : std_logic;
@@ -137,8 +153,13 @@ begin  -- MMU
              "01" & colorAddr when addr = x"2006" else
              "0100000000" & colorAddr(13 downto 8) when addr = x"2007" else
 
+
              -- ready to write signal is lsb on addr 2015.
              "000000000000000" & rdy when addr = x"2015" else
+
+             "000000000000" & btnUp & btnRight & btnDown & btnLeft when addr = x"2008" else
+             "00000000000" & keypadOut when addr = x"2009" else
+
              
              romOut;
 
@@ -153,7 +174,17 @@ begin  -- MMU
 
   IO_P <= BB1;        
   IO_N <= BB2;
+    
+  process(clk)
+  begin
+    if rising_edge(clk) then
+      if wr='1' then
+         ledState <= std_logic_vector(dataIn);
+      end if;
+    end if;
+  end process;
   
+  Led <= ledState; 
        
   U1 : ramMem port map (
     clk  => clk,
@@ -200,6 +231,7 @@ begin  -- MMU
     charAddr => charAddr,
     colorAddr => colorAddr
   );
+
   U5 : soundinterface port map(
     clk => clk,
     rst => rst,                         
@@ -213,5 +245,15 @@ begin  -- MMU
     BC1 => AY_BC1,
     AY_RESET => AY_RESET
   );
+
+
+  U6 : keypadDecoder port map (
+    clk => clk,
+    rst => rst,
+    row => JD(7 downto 4),
+    col => JD(3 downto 0),
+    decodeOut => keypadOut
+    );
+
 
 end Behavioral;

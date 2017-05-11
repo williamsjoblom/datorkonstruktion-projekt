@@ -6,17 +6,15 @@ use IEEE.NUMERIC_STD.ALL;
 
 entity keypad is
   port(clk: in std_logic;
-       strobe: in std_logic;
-       data_in: in unsigned(3 downto 0);
-       chip_select: in std_logic;
-       data_out: out unsigned(3 downto 0);
+       dataOut: out unsigned(3 downto 0)
+       )
 end keypad;
 
 architecture Behavioral of keypad is
 
   -- Internal signals
   signal data_reg : unsigned(3 downto 0);
-
+  
 begin
   -- Read from keypad
   process(clk)

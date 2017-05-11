@@ -94,6 +94,7 @@ begin
       translatednote <= x"00";
       nte_done <= '1';
       triggerCh <= '0';
+      send <= '0';
     else
       triggerCh <= '0';
       -- can directly determine the first register to rdy when note arrives.
