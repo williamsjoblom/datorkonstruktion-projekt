@@ -2,9 +2,46 @@
 ;;; Tracker
 ;;; Reserves addresses $50-$6F and $1000-$12FF
 ;;; 
-	
+
+;;;
+;;; Column labels
+;;; 
 col_labels:
 	.data 'Ch A    Ch B    Ch C'
+
+;;;
+;;; Note labels
+;;;
+c_label:
+	.data 'C '
+cs_label:
+	.data 'C#'
+d_label:
+	.data 'D '
+ds_label:
+	.data 'D#'
+e_label:
+	.data 'E '
+f_label:
+	.data 'F '
+fs_label:
+	.data 'F#'
+g_label:
+	.data 'G '
+gs_label:
+	.data 'G#'
+a_label:
+	.data 'A '
+as_label:
+	.data 'A#'
+b_label:
+	.data 'B '
+
+mute_label:
+	.data '-- '
+
+err_label:
+	.data 'err'
 
 
 ;;;
@@ -39,6 +76,70 @@ tracker_init:
 	
 	RTS
 
+;;;
+;;; Channel enable/disable functions
+;;; 	
+tracker_enable_all:
+	LDY #$F8
+	STY $6C
+	JSR ay_enable
+	RTS
+	
+tracker_disable_all:
+	LDY #$FF
+	STY $6C
+	JSR ay_enable
+	RTS
+	
+tracker_enable_a:
+	LDA $6C
+	AND #$FE
+	STA $6C
+	TAY
+	JSR ay_enable
+	RTS
+	
+tracker_enable_b:
+	LDA $6C
+	AND #$FD
+	STA $6C
+	TAY
+	JSR ay_enable
+	RTS
+
+tracker_enable_c:
+	LDA $6C
+	AND #$FB
+	STA $6C
+	TAY
+	JSR ay_enable
+	RTS
+
+tracker_disable_a:
+	LDA $6C
+	ORA #$01
+	STA $6C
+	TAY
+	JSR ay_enable
+	RTS
+	
+tracker_disable_b:
+	LDA $6C
+	ORA #$02
+	STA $6C
+	TAY
+	JSR ay_enable
+	RTS
+	
+tracker_disable_c:
+	LDA $6C
+	ORA #$04
+	STA $6C
+	TAY
+	JSR ay_enable
+	RTS
+	
+	
 ;;;
 ;;; Handle dpad keypresses
 ;;; 
@@ -134,7 +235,7 @@ tracker_validate_cursor:
 	STA $61
 	JMP tracker_validate_left
 tracker_validate_down:
-	CMP #38
+	CMP #39
 	BMI tracker_validate_left
 
 	LDA #0			; Wrap around
@@ -248,6 +349,11 @@ tracker_read_keypad:
 tracker_read_keypad_avail:
 	;; Key is pressed, read most significant digit
 	JSR keypad_read
+
+	;; Compensate for note lookup table offset, ie do not accept octave 0
+	CMP #1
+	BMI tracker_read_keypad_avail
+	
 	ASL #4 			; Shift most significant digit
 	STA $6F			; Store A in $6F
 	
@@ -284,7 +390,7 @@ tracker_read_keypad_store_end:
 	JSR tracker_update_cursor
 	
 	RTS
-
+	
 	
 ;;;
 ;;; Update
@@ -292,6 +398,138 @@ tracker_read_keypad_store_end:
 tracker_update:
 	JSR tracker_handle_dpad
 	JSR tracker_read_keypad
+	RTS
+
+
+;;;
+;;; Print tone in A
+;;; (ex C#4)
+;;; 
+tracker_put_tone:
+	CMP #$FF
+	BEQ tracker_put_tone_mute
+	
+	PHA
+	LSR #4 			; Discard note
+	JSR vga_put_hex_digit	; Print octave
+	PLA
+
+	LDX #$F0		; Set color to black/white
+	AND #$0F		; Discard octave
+	JSR tracker_put_note	; Print note
+	RTS
+tracker_put_tone_mute:
+	LDX #$F0		; Set color to black/white cyan
+	LDY <mute_label
+	LDA >mute_label
+	JSR vga_put_str
+	RTS
+
+	
+;;;
+;;; Print note in A
+;;; (ex A#)
+;;; 
+tracker_put_note:	
+	CMP #0
+	BNE tracker_put_note_cs
+	
+	LDY <c_label
+	LDA >c_label
+	JSR vga_put_str
+	RTS
+tracker_put_note_cs:	
+	CMP #1
+	BNE tracker_put_note_d
+	
+	LDY <cs_label
+	LDA >cs_label
+	JSR vga_put_str
+	RTS
+tracker_put_note_d:	
+	CMP #2
+	BNE tracker_put_note_ds
+	
+	LDY <d_label
+	LDA >d_label
+	JSR vga_put_str
+	RTS
+tracker_put_note_ds:	
+	CMP #3
+	BNE tracker_put_note_e
+	
+	LDY <ds_label
+	LDA >ds_label
+	JSR vga_put_str
+	RTS
+tracker_put_note_e:	
+	CMP #4
+	BNE tracker_put_note_f
+	
+	LDY <e_label
+	LDA >e_label
+	JSR vga_put_str
+	RTS
+tracker_put_note_f:	
+	CMP #5
+	BNE tracker_put_note_fs
+	
+	LDY <f_label
+	LDA >f_label
+	JSR vga_put_str
+	RTS
+tracker_put_note_fs:	
+	CMP #6
+	BNE tracker_put_note_g
+	
+	LDY <fs_label
+	LDA >fs_label
+	JSR vga_put_str
+	RTS
+tracker_put_note_g:	
+	CMP #7
+	BNE tracker_put_note_gs
+	
+	LDY <g_label
+	LDA >g_label
+	JSR vga_put_str
+	RTS
+tracker_put_note_gs:	
+	CMP #8
+	BNE tracker_put_note_a
+	
+	LDY <gs_label
+	LDA >gs_label
+	JSR vga_put_str
+	RTS
+tracker_put_note_a:	
+	CMP #9
+	BNE tracker_put_note_as
+	
+	LDY <a_label
+	LDA >a_label
+	JSR vga_put_str
+	RTS
+tracker_put_note_as:	
+	CMP #10
+	BNE tracker_put_note_b
+	
+	LDY <as_label
+	LDA >as_label
+	JSR vga_put_str
+	RTS
+tracker_put_note_b:	
+	CMP #11
+	BNE tracker_put_note_other
+	
+	LDY <b_label
+	LDA >b_label
+	JSR vga_put_str
+	RTS
+tracker_put_note_other:
+	LDY <err_label
+	LDA >err_label
+	JSR vga_put_str
 	RTS
 
 	
@@ -363,13 +601,19 @@ tracker_draw_col:
 	STY $51
 	
 	LDX #0
-tracker_draw_col_line:	
+tracker_draw_col_line:
+	TXA
+	PHA
+	
 	LDA ($50), X
-	JSR vga_put_hex
+	JSR tracker_put_tone
+	
+	PLA
+	TAX
 
 	;; Carrage return
 	LDA $2002
-	SBC #2
+	SBC #3
 	STA $2002
 
 	;; New line
@@ -387,12 +631,12 @@ tracker_draw_col_line:
 ;;;
 ;;; Play song
 ;;; 
-tracker_play:
-	JSR ay_enable_all
-	
+tracker_play:	
 	LDA #0
 	PHA
 tracker_play_loop:
+	JSR tracker_enable_all
+	
 	PLA
 	TAX
 
@@ -421,7 +665,7 @@ tracker_play_loop:
 	
 tracker_play_end:
 
-	JSR ay_disable_all
+	JSR tracker_disable_all
 	
 	RTS
 
@@ -430,14 +674,27 @@ tracker_play_end:
 ;;; Play note in Ch A at position X
 ;;; 
 tracker_play_a:
-	;; Store fine value
+	;; Load note/octave
 	LDA $1000, X
-	ASL #4
+	;; Compensate for octave offset
+	SBC #$10
+	TAX
+	
+	CMP #$FF
+	BNE tracker_play_a_note
+
+	JSR tracker_disable_a
+	
+	RTS
+	
+tracker_play_a_note:
+
+	;; Store fine_value
+	LDA note_table_fine, X
 	STA $6A
 
-	;; Store course value
-	LDA $1000, X
-	LSR #4
+	;; Store coarse value
+	LDA note_table_coarse, X
 	STA $6B
 
 	LDX #$00
@@ -454,14 +711,25 @@ tracker_play_a:
 ;;; Play note in Ch B at position X
 ;;; 
 tracker_play_b:
-	;; Store fine value
-	LDA $1100, X
-	ASL #4
+	;; Load note/octave
+	LDX $1100, X
+
+	TXA
+	CMP #$FF
+	BNE tracker_play_b_note
+
+	JSR tracker_disable_b
+	
+	RTS
+	
+tracker_play_b_note:
+
+	;; Store fine_value
+	LDA note_table_fine, X
 	STA $6A
 
-	;; Store course value
-	LDA $1100, X
-	LSR #4
+	;; Store coarse value
+	LDA note_table_coarse, X
 	STA $6B
 
 	LDX #$02
@@ -478,16 +746,26 @@ tracker_play_b:
 ;;; Play note in Ch C at position X
 ;;; 
 tracker_play_c:
-	;; Store fine value
-	LDA $1200, X
-	ASL #4
+	;; Load note/octave
+	LDX $1200, X
+
+	TXA
+	CMP #$FF
+	BNE tracker_play_c_note
+
+	JSR tracker_disable_c
+	
+	RTS
+	
+tracker_play_c_note:	
+	;; Store fine_value
+	LDA note_table_fine, X
 	STA $6A
 
-	;; Store course value
-	LDA $1200, X
-	LSR #4
+	;; Store coarse value
+	LDA note_table_coarse, X
 	STA $6B
-
+	
 	LDX #$04
 	LDY $6A
 	JSR ay_send

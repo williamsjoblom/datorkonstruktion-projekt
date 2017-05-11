@@ -94,6 +94,7 @@ ay_amplitude_a:
 	JSR ay_send
 	RTS
 
+	
 ;;;
 ;;; Set Ch B amplitude to Y
 ;;; 
@@ -102,11 +103,21 @@ ay_amplitude_b:
 	JSR ay_send
 	RTS
 
+	
 ;;;
 ;;; Set Ch C amplitude to Y
 ;;; 
 ay_amplitude_c:
 	LDX #$0A
+	JSR ay_send
+	RTS
+
+	
+;;;
+;;; Set enable bits to Y
+;;; 
+ay_enable:
+	LDX #$07
 	JSR ay_send
 	RTS
 
