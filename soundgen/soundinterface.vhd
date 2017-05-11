@@ -9,13 +9,14 @@ entity soundinterface is
        ch: in unsigned(1 downto 0);
        rst: in std_logic;               -- Reset
        datain: in unsigned(7 downto 0);  -- Bus
-       
        wr: in std_logic;
        
        BDIR: out std_logic;
        BC1: out std_logic;
        dataout: out std_logic_vector(7 downto 0);
+       AY_RESET: out std_logic; 
        rdyout: out std_logic
+       
        );
 end soundinterface;
 
@@ -56,12 +57,13 @@ architecture Behavioral of soundinterface is
   signal send : std_logic := '0';
   signal nte_done : std_logic := '1';
   signal triggerCh : std_logic := '0';
+  signal longrst : std_logic := '1';    -- for chip reset
 
 
 
   -- Write Unit Modes
-  type wrmodes is (INACTIVE, WRMOD, LATCHMOD);
-  signal wrmode : wrmodes := INACTIVE;
+  --type wrmodes is (INACTIVE, WRMOD, LATCHMOD);
+  --signal wrmode : wrmodes := INACTIVE;
   
 begin
 
@@ -78,7 +80,7 @@ begin
 
   --dataout <= std_logic_vector(datamux);
   
-  rdyout <= '1' when (nte_done = '1' and rdy = '1') else '0';
+  rdyout <= '1' when (nte_done = '1' and rdy = '1' and longrst = '1') else '0';
   rdyin <= '1' when (nte_done = '0' and rdy = '1') else '0';
   nte <= '0' when chreg = b"11"  else '1';
   
@@ -98,7 +100,28 @@ begin
         chreg <= b"11";
       end if;
     end if;
-  end process; 
+  end process;
+
+  -- reset to chip.
+  process(clk)
+    variable rst_timer : integer := 0;
+  begin
+    
+    if rising_edge(clk) then
+      if rst = '1' then
+        rst_timer := 60;
+        longrst <= '0';
+      else
+        if rst_timer /= 0 then
+          rst_timer := rst_timer - 1;
+        elsif rst_timer = 0 then
+          longrst <= '1';
+        end if;
+      end if;
+    end if;
+  end process;
+
+  AY_RESET <= '1' when longrst = '1' else '0';
 
   -- Write Unit
   process(clk)

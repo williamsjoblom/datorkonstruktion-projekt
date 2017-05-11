@@ -1,6 +1,6 @@
 main:
 	JSR ready
-	LDA #$11
+	LDA #$00
 	STA $2010
 
 	JSR ready

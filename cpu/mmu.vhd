@@ -83,7 +83,7 @@ architecture Behavioral of mmu is
        ch: in unsigned(1 downto 0);
        rst: in std_logic;               -- Reset
        datain: in unsigned(7 downto 0);  -- Bus
-       
+       AY_RESET: out std_logic;
        wr: in std_logic;
        
        BDIR: out std_logic;
@@ -210,7 +210,8 @@ begin  -- MMU
 
     dataout => AY_DATA,
     BDIR => AY_BDIR,
-    BC1 => AY_BC1
+    BC1 => AY_BC1,
+    AY_RESET => AY_RESET
   );
 
 end Behavioral;
