@@ -139,23 +139,23 @@ begin
       else
         --dataout <= std_logic_vector(datamux);
         if trigger_pulse = '1' or send = '1' then  -- feflefelfelf
-          lc := 800;
+          lc := 900;
           rdy <= '0';
         end if;
         
         if latch = '1' then
-          if lc = 800 then
+          if lc = 900 then
             
             --wrmode <= INACTIVE;
             BDIR <= '0';
             BC1 <= '0';
-          elsif lc = 510 then            
+          elsif lc = 520 then            
             dataout <= std_logic_vector(datamux);
           elsif lc = 500 then
             --wrmode <= LATCHMOD;
             BDIR <= '1';
             BC1 <= '1';
-          elsif lc = 200 then
+          elsif lc = 100 then
             rdy <= '1';
             --wrmode <= INACTIVE;
             BDIR <= '0';
@@ -163,17 +163,17 @@ begin
             latch <= '0';
           end if;
         else
-          if lc = 800 then
+          if lc = 900 then
             --wrmode <= INACTIVE;
             BDIR <= '0';
             BC1 <= '0';
-          elsif lc = 510 then
+          elsif lc = 520 then
             dataout <= std_logic_vector(datamux);            
           elsif lc = 500 then
             --wrmode <= WRMOD;
             BDIR <= '1';
             BC1 <= '0';
-          elsif lc = 200 then
+          elsif lc = 100 then
             rdy <= '1';
             --wrmode <= INACTIVE;
             BDIR <= '0';

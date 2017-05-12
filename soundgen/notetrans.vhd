@@ -27,16 +27,16 @@ architecture Behavioral of notetrans is
   end component;
   
   -- Internal signals
-  signal noteVector : unsigned(11 downto 0) := x"000";
+  signal noteVector : unsigned(11 downto 0);
   
-  signal nte_pulse : std_logic := '0';
-  signal nte_wait : std_logic := '0';
+  signal nte_pulse : std_logic;
+  signal nte_wait : std_logic;
 
-  signal rdy_pulse : std_logic := '0';
-  signal rdy_wait : std_logic := '0';
+  signal rdy_pulse : std_logic;
+  signal rdy_wait : std_logic;
   
-  signal int_count : unsigned(1 downto 0) := b"00";  -- keeps track of rdy order.
-  signal int_data : unsigned(7 downto 0) := x"00";  -- read when wrt and nte is high.
+  signal int_count : unsigned(1 downto 0);  -- keeps track of rdy order.
+  signal int_data : unsigned(7 downto 0);  -- read when wrt and nte is high.
 
 
 BEGIN
