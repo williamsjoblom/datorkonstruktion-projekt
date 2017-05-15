@@ -7,7 +7,7 @@
 ;;; Column labels
 ;;; 
 col_labels:
-	.data 'Ch A    Ch B    Ch C'
+	.data 'Ch A    Ch B    Ch C                                                            '
 
 ;;;
 ;;; Note labels
@@ -41,7 +41,7 @@ mute_label:
 	.data '-- '
 
 err_label:
-	.data 'err'
+	.data 'er'
 
 
 ;;;
@@ -57,6 +57,8 @@ tracker_init:
 	JSR ay_amplitude_a
 	JSR ay_amplitude_b
 	JSR ay_amplitude_c
+
+	JSR tracker_clear
 
 	LDX #$0B		; Set color to black/light cyan
 	LDY <col_labels
@@ -419,7 +421,7 @@ tracker_put_tone:
 	JSR tracker_put_note	; Print note
 	RTS
 tracker_put_tone_mute:
-	LDX #$F0		; Set color to black/white cyan
+	LDX #$F0		; Set color to black/white
 	LDY <mute_label
 	LDA >mute_label
 	JSR vga_put_str
@@ -628,6 +630,24 @@ tracker_draw_col_line:
 	RTS
 
 
+;;; 
+;;; Clear channels
+;;; 
+tracker_clear:
+	LDX #0
+tracker_clear_line:
+	LDA #$FF		; Load MUTE value
+	STA $1000, X		; Clear A row
+	STA $1100, X		; Clear B row
+	STA $1200, X		; Clear C row
+		
+	INX
+	TXA
+	CMP #39
+	BNE tracker_clear_line
+	RTS
+
+
 ;;;
 ;;; Play song
 ;;; 
@@ -713,8 +733,10 @@ tracker_play_a_note:
 tracker_play_b:
 	;; Load note/octave
 	LDX $1100, X
-
+	;; Compensate for octave offset
+	SBC #$10
 	TXA
+	
 	CMP #$FF
 	BNE tracker_play_b_note
 
@@ -748,6 +770,8 @@ tracker_play_b_note:
 tracker_play_c:
 	;; Load note/octave
 	LDX $1200, X
+	;; Compensate for octave offset
+	SBC #$10
 
 	TXA
 	CMP #$FF
@@ -778,11 +802,11 @@ tracker_play_c_note:
 	
 
 ;;;
-;;; Delay one beat (500ms = 120BPM)
+;;; Delay one beat (250ms = 240LPM)
 ;;; 
 tracker_beat_delay:
-	LDA #20
-	LDX #250 		; Do 20 delays * 25ms = 500ms = 120BPM
+	LDA #10
+	LDX #250 		; Do 10 delays * 25ms = 250ms = 240LPM
 tracker_beat_delay_loop:
 	PHA
 	JSR delay
@@ -791,6 +815,3 @@ tracker_beat_delay_loop:
 	CMP #0
 	BNE tracker_beat_delay_loop
 	RTS
-
-	
-	
