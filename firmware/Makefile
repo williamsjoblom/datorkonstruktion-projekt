@@ -1,7 +1,7 @@
 TEMPLATE = template.vhd
 SRC = main.asm ay.asm vga.asm tracker.asm keypad.asm delay.asm notes.asm
 
-CHASM = ~/TSEA83proj/chasm/chasm.py
+CHASM = ~/chasm/chasm.py
 CHASMFLAGS = --vhdl $(TEMPLATE) --offset E000 --entry main
 OUTPUT = ../cpu/pMem.vhd
 

@@ -7,7 +7,7 @@
 ;;; 
 ay_init:
 	;; Reset AY
-	JSR ay_reset	
+	;; JSR ay_reset
 
 	JSR ay_disable_all
 	
@@ -17,9 +17,9 @@ ay_init:
 	JSR ay_send
 
 	;; Set envelop to sawtooth
-	LDX #$0D
-	LDY #$0C
-	JSR ay_send
+	;; LDX #$0D
+	;; LDY #$0C
+	;; JSR ay_send
 	
 	RTS
 
@@ -28,62 +28,64 @@ ay_init:
 ;;; Send data in Y to register X
 ;;; 
 ay_send:
-	JSR ay_address
-	JSR ay_data
+	JSR ay_wait
+	STX $2013
+	JSR ay_wait
+	STY $2013
 	RTS
 
 	
 ;;; 
 ;;; Send reset to AY
 ;;; 
-ay_reset:
-	LDA #0
-	STA $2001
-	JSR ay_delay
-	JSR ay_inactive
-	RTS
+;; ay_reset:
+;; 	LDA #0
+;; 	STA $2001
+;; 	JSR ay_delay
+;; 	JSR ay_inactive
+;; 	RTS
 
-;;; 
-;;; Send data in X to AY
-;;; 
-ay_data:
-	STY $2000
-	LDA #$FE
-	STA $2001
-	JSR ay_delay
-	JSR ay_inactive
-	RTS
+;; ;;; 
+;; ;;; Send data in X to AY
+;; ;;; 
+;; ay_data:
+;; 	STY $2000
+;; 	LDA #$FE
+;; 	STA $2001
+;; 	JSR ay_delay
+;; 	JSR ay_inactive
+;; 	RTS
 	
-;;; 
-;;; Send address in X to AY
-;;; 
-ay_address:
-	STX $2000
-	LDA #$FF
-	STA $2001
-	JSR ay_delay
-	JSR ay_inactive
-	RTS
+;; ;;; 
+;; ;;; Send address in X to AY
+;; ;;; 
+;; ay_address:
+;; 	STX $2000
+;; 	LDA #$FF
+;; 	STA $2001
+;; 	JSR ay_delay
+;; 	JSR ay_inactive
+;; 	RTS
 
 	
-;;; 
-;;; Send inactive signal to AY
-;;; 
-ay_inactive:
-	LDA #4
-	STA $2001
-	JSR ay_delay
-	RTS
+;; ;;; 
+;; ;;; Send inactive signal to AY
+;; ;;; 
+;; ay_inactive:
+;; 	LDA #4
+;; 	STA $2001
+;; 	JSR ay_delay
+;; 	RTS
 
-;;; 
-;;; Write delay
-;;; 
-ay_delay:
-	LDA #20
-next:
-	SBC #1
-	BNE next
-	RTS
+;; ;;; 
+;; ;;; Write delay
+;; ;;; 
+;; ay_delay:
+;; 	LDA #20
+;; next:
+;; 	SBC #1
+;; 	BNE next
+;; 	RTS
 
 
 ;;;
@@ -140,4 +142,14 @@ ay_disable_all:
 	LDX #$07
 	LDY #$FF
 	JSR ay_send
+	RTS
+
+;;;
+;;; Wait for sound interface to signal ready.
+;;;
+
+ay_wait:
+	LDA $2015
+	CMP #$01
+	BNE ay_wait
 	RTS

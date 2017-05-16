@@ -669,17 +669,13 @@ tracker_play_end:
 	
 	RTS
 
-	
 ;;; 
 ;;; Play note in Ch A at position X
 ;;; 
 tracker_play_a:
 	;; Load note/octave
-	LDA $1000, X
-	;; Compensate for octave offset
-	SBC #$10
-	TAX
-	
+	LDX $1000, X
+	TXA
 	CMP #$FF
 	BNE tracker_play_a_note
 
@@ -687,33 +683,16 @@ tracker_play_a:
 	
 	RTS
 	
-tracker_play_a_note:
-
-	;; Store fine_value
-	LDA note_table_fine, X
-	STA $6A
-
-	;; Store coarse value
-	LDA note_table_coarse, X
-	STA $6B
-
-	LDX #$00
-	LDY $6A
-	JSR ay_send
-	
-	LDX #$01
-	LDY $6B
-	JSR ay_send
-
+tracker_play_a_note:	
+	JSR ay_wait
+	STX $2010
 	RTS
-
 ;;; 
 ;;; Play note in Ch B at position X
 ;;; 
 tracker_play_b:
 	;; Load note/octave
 	LDX $1100, X
-
 	TXA
 	CMP #$FF
 	BNE tracker_play_b_note
@@ -722,33 +701,17 @@ tracker_play_b:
 	
 	RTS
 	
-tracker_play_b_note:
-
-	;; Store fine_value
-	LDA note_table_fine, X
-	STA $6A
-
-	;; Store coarse value
-	LDA note_table_coarse, X
-	STA $6B
-
-	LDX #$02
-	LDY $6A
-	JSR ay_send
-	
-	LDX #$03
-	LDY $6B
-	JSR ay_send
-
+tracker_play_b_note:	
+	JSR ay_wait
+	STX $2011
 	RTS
-
+	
 ;;; 
 ;;; Play note in Ch C at position X
 ;;; 
 tracker_play_c:
 	;; Load note/octave
 	LDX $1200, X
-
 	TXA
 	CMP #$FF
 	BNE tracker_play_c_note
@@ -758,23 +721,13 @@ tracker_play_c:
 	RTS
 	
 tracker_play_c_note:	
-	;; Store fine_value
-	LDA note_table_fine, X
-	STA $6A
-
-	;; Store coarse value
-	LDA note_table_coarse, X
-	STA $6B
-	
-	LDX #$04
-	LDY $6A
-	JSR ay_send
-	
-	LDX #$05
-	LDY $6B
-	JSR ay_send
-
+	JSR ay_wait
+	STX $2012
 	RTS
+	
+
+
+
 	
 
 ;;;
