@@ -9,6 +9,15 @@
 col_labels:
 	.data 'Ch A    Ch B    Ch C                                                            '
 
+ascii_a: 	.data ' (        )      )  (                     )      )     *     '
+ascii_b: 	.data ' )\ )  ( /(   ( /(  )\ )   (       (   ( /(   ( /(   (  `    '
+ascii_c:	.data '(()/(  )\())  )\())(()/(   )\    ( )\  )\())  )\())  )\))(   '
+ascii_d:	.data ' /(_))((_)\  ((_)\  /(_))(((_)   )((_)((_)\  ((_)\  ((_)()\  '
+ascii_e:	.data '(_))    ((_)  _((_)(_))  )\___  ((_)_   ((_)   ((_) (_()((_) '
+ascii_f: 	.data '/ __|  / _ \ | \| ||_ _|((/ __|  | _ ) / _ \  / _ \ |  \/  | '
+ascii_g: 	.data '\__ \ | (_) || .` | | |  | (__   | _ \| (_) || (_) || |\/| | '
+ascii_h: 	.data '|___/  \___/ |_|\_||___|  \___|  |___/ \___/  \___/ |_|  |_| '
+	
 ;;;
 ;;; Note labels
 ;;;
@@ -53,6 +62,9 @@ tracker_init:
 	STA $60
 	STA $61
 
+	LDA #1
+	STA $6D
+
 	LDY #$0F
 	JSR ay_amplitude_a
 	JSR ay_amplitude_b
@@ -75,7 +87,77 @@ tracker_init:
 	JSR vga_set_cursor
 	LDA #$0F 		; Invert color
 	STA ($2006)
+
+	JSR tracker_print_art
 	
+	RTS
+
+	
+tracker_print_art:
+	LDX #9
+	LDY #41
+	JSR vga_set_cursor
+	LDX #$E0		; Set color to black/light cyan
+	LDY <ascii_a
+	LDA >ascii_a
+	JSR vga_put_str
+
+	LDX #9
+	LDY #42
+	JSR vga_set_cursor
+	LDX #$E0		; Set color to black/light cyan
+	LDY <ascii_b
+	LDA >ascii_b
+	JSR vga_put_str
+
+	LDX #9
+	LDY #43
+	JSR vga_set_cursor
+	LDX #$E0		; Set color to black/light cyan
+	LDY <ascii_c
+	LDA >ascii_c
+	JSR vga_put_str
+
+	LDX #9
+	LDY #44
+	JSR vga_set_cursor
+	LDX #$E0		; Set color to black/light cyan
+	LDY <ascii_d
+	LDA >ascii_d
+	JSR vga_put_str
+
+	LDX #9
+	LDY #45
+	JSR vga_set_cursor
+	LDX #$E0		; Set color to black/light cyan
+	LDY <ascii_e
+	LDA >ascii_e
+	JSR vga_put_str
+
+	LDX #9
+	LDY #46
+	JSR vga_set_cursor
+	LDX #$F0		; Set color to black/light cyan
+	LDY <ascii_f
+	LDA >ascii_f
+	JSR vga_put_str
+
+	LDX #9
+	LDY #47
+	JSR vga_set_cursor
+	LDX #$F0		; Set color to black/light cyan
+	LDY <ascii_g
+	LDA >ascii_g
+	JSR vga_put_str
+
+	LDX #9
+	LDY #48
+	JSR vga_set_cursor
+	LDX #$F0		; Set color to black/light cyan
+	LDY <ascii_h
+	LDA >ascii_h
+	JSR vga_put_str
+
 	RTS
 
 ;;;
@@ -660,6 +742,8 @@ tracker_play_loop:
 	PLA
 	TAX
 
+	JSR tracker_set_playing_cursor
+
 	PHA
 	JSR tracker_play_a
 	PLA
@@ -799,6 +883,51 @@ tracker_play_c_note:
 	JSR ay_send
 
 	RTS
+
+
+;;;
+;;; Set 'now playing' cursor to X
+;;; Cursor position: $6D
+;;; 
+tracker_set_playing_cursor:
+	TXA
+	PHA
+
+	JSR tracker_translate_playing_cursor
+
+	;; Overwrite old cursor with space
+	LDY #$F0
+	LDA #$20
+	JSR vga_put_char
+
+	PLA
+	PHA
+	TAX
+
+	;; Write updated cursor
+	ADC #1
+	STA $6D
+	JSR tracker_translate_playing_cursor
+	LDY #$F0
+	LDA #$3C
+	JSR vga_put_char
+
+	PLA
+	TAX
+
+	RTS
+	
+;;;
+;;; Set vga cursor to playing cursor position
+;;; 
+tracker_translate_playing_cursor:
+	LDA $6D
+	TAY
+	LDX #20
+	JSR vga_set_cursor
+
+	RTS
+	
 	
 
 ;;;
