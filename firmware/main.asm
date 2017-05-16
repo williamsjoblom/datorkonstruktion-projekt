@@ -33,13 +33,13 @@ MAIN:
 	LDA #$49
 	STA $2010
 
-	LDX #$8E
-	LDY #$00
-	JSR raw
+	;; LDX #$8E
+	;; LDY #$00
+	;; JSR raw
 
-	LDX #$00
-	LDY #$01
-	JSR raw
+	;; LDX #$00
+	;; LDY #$01
+	;; JSR raw
 loop:
 	JMP loop
 

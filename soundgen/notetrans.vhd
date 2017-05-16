@@ -130,7 +130,7 @@ end process;
 
   U0 : noteVec port map (
     nte => nte,
-    noteAddr => datareg,
+    noteAddr => int_data,
     noteVector => noteVector
     );
 
