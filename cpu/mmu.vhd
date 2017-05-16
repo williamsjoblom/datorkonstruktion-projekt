@@ -93,6 +93,20 @@ architecture Behavioral of mmu is
       decodeOut : out unsigned(4 downto 0)
       );
   end component;
+  component soundinterface
+   port(clk: in std_logic;
+        ch: in unsigned(1 downto 0);
+        rst: in std_logic;               -- Reset
+        datain: in unsigned(7 downto 0);  -- Bus
+        AY_RESET: out std_logic;
+        wr: in std_logic;
+       
+        BDIR: out std_logic;
+        BC1: out std_logic;
+        dataout: out std_logic_vector(7 downto 0);
+        rdyout: out std_logic
+        );
+  end component;
   
   
   signal ramOut : unsigned(15 downto 0);
@@ -114,6 +128,12 @@ architecture Behavioral of mmu is
 
   signal BB1 : std_logic_vector(19 downto 0) := (others => '0');
   signal BB2 : std_logic_vector(19 downto 0) := (others => '0');
+
+  -----------------------------------------------------------------------------
+  signal soundWr : std_logic := '0';
+  signal ch : unsigned(1 downto 0) := (others => '1');
+  signal rdy : std_logic := '1';
+  -----------------------------------------------------------------------------
   
   alias AY_BC1 : std_logic is BB1(0);
   alias AY_BDIR : std_logic is BB1(1);
@@ -136,11 +156,17 @@ begin  -- MMU
 
              "000000000000" & btnUp & btnRight & btnDown & btnLeft when addr = x"2008" else
              "00000000000" & keypadOut when addr = x"2009" else
+
+             -- ready to write signal is lsb on addr 2015.
+             "000000000000000" & rdy when addr = x"2015" else
              
              romOut;
 
   ramWr <= wr when addr(15 downto 13) = "000" else '0';
   pictWr <= wr when addr(15 downto 14) = "01" else '0';
+
+  soundWr <= wr when addr(15 downto 2) = b"00100000000100" else '0';
+  ch <= addr(1 downto 0) when addr(15 downto 2) = b"00100000000100" else b"11"; 
 
   curXWr <= wr when addr = x"2002" else '0';
   curYWr <= wr when addr = x"2003" else '0';
@@ -151,19 +177,8 @@ begin  -- MMU
   process(clk)
   begin
     if rising_edge(clk) then
-      if rst='1' then
-        BB1 <= (others => '0');
-        BB2 <= (others => '0');
-      elsif wr='1' then
-         ledState <= std_logic_vector(dataIn);
-
-         if addr = x"2000" then
-           AY_DATA <= std_logic_vector(dataIn);
-         elsif addr = x"2001" then
-           AY_BC1 <= dataIn(0);
-           AY_BDIR <= dataIn(1);
-           AY_RESET <= dataIn(2);
-         end if;
+      if wr='1' then
+        ledState <= std_logic_vector(dataIn);
       end if;
     end if;
   end process;
@@ -223,6 +238,19 @@ begin  -- MMU
     col => JD(3 downto 0),
     decodeOut => keypadOut
     );
+  U6 : soundinterface port map(
+    clk => clk,
+    rst => rst,                         
+    ch => ch,
+    wr => soundWr,
+    datain=> dataIn,
+    rdyout=>rdy,
+
+    dataout => AY_DATA,
+    BDIR => AY_BDIR,
+    BC1 => AY_BC1,
+    AY_RESET => AY_RESET
+  );
 
 
 end Behavioral;

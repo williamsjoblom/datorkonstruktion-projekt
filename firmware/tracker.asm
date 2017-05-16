@@ -17,6 +17,21 @@ ascii_e:	.data '(_))    ((_)  _((_)(_))  )\___  ((_)_   ((_)   ((_) (_()((_) '
 ascii_f: 	.data '/ __|  / _ \ | \| ||_ _|((/ __|  | _ ) / _ \  / _ \ |  \/  | '
 ascii_g: 	.data '\__ \ | (_) || .` | | |  | (__   | _ \| (_) || (_) || |\/| | '
 ascii_h: 	.data '|___/  \___/ |_|\_||___|  \___|  |___/ \___/  \___/ |_|  |_| '
+
+note_a:	.data 'Key : Note'
+note_b:	.data '  1 : C'	
+note_c:	.data '  2 : C#'
+note_d:	.data '  3 : D'
+note_e:	.data '  4 : D#'
+note_f:	.data '  5 : E'
+note_g:	.data '  6 : F'
+note_h:	.data '  7 : F#'
+note_i:	.data '  8 : G'
+note_j:	.data '  9 : G#'
+note_k:	.data '  A : A'
+note_l:	.data '  B : A#'
+note_m:	.data '  C : B'
+note_n:	.data ' FF : mute'
 	
 ;;;
 ;;; Note labels
@@ -92,7 +107,128 @@ tracker_init:
 	
 	RTS
 
+;;;
+;;; Print note table
+;;; 
+tracker_print_table:
+	LDX #20
+	LDY #1
+	JSR vga_set_cursor
+	LDX #$F0		; Set color to black/light cyan
+	LDY <note_a
+	LDA >note_a
+	JSR vga_put_str
+
+	LDX #20
+	LDY #2
+	JSR vga_set_cursor
+	LDX #$F0		; Set color to black/light cyan
+	LDY <note_b
+	LDA >note_b
+	JSR vga_put_str
+
+	LDX #20
+	LDY #3
+	JSR vga_set_cursor
+	LDX #$F0		; Set color to black/light cyan
+	LDY <note_c
+	LDA >note_c
+	JSR vga_put_str
+
+	LDX #20
+	LDY #4
+	JSR vga_set_cursor
+	LDX #$F0		; Set color to black/light cyan
+	LDY <note_d
+	LDA >note_d
+	JSR vga_put_str
+
+	LDX #20
+	LDY #5
+	JSR vga_set_cursor
+	LDX #$F0		; Set color to black/light cyan
+	LDY <note_e
+	LDA >note_e
+	JSR vga_put_str
+
+	LDX #20
+	LDY #6
+	JSR vga_set_cursor
+	LDX #$F0		; Set color to black/light cyan
+	LDY <note_f
+	LDA >note_f
+	JSR vga_put_str
+
+	LDX #20
+	LDY #7
+	JSR vga_set_cursor
+	LDX #$F0		; Set color to black/light cyan
+	LDY <note_g
+	LDA >note_g
+	JSR vga_put_str
+
+	LDX #20
+	LDY #8
+	JSR vga_set_cursor
+	LDX #$F0		; Set color to black/light cyan
+	LDY <note_h
+	LDA >note_h
+	JSR vga_put_str
+
+	LDX #20
+	LDY #9
+	JSR vga_set_cursor
+	LDX #$F0		; Set color to black/light cyan
+	LDY <note_i
+	LDA >note_i
+	JSR vga_put_str
+
+	LDX #20
+	LDY #10
+	JSR vga_set_cursor
+	LDX #$F0		; Set color to black/light cyan
+	LDY <note_j
+	LDA >note_j
+	JSR vga_put_str
+
+	LDX #20
+	LDY #11
+	JSR vga_set_cursor
+	LDX #$F0		; Set color to black/light cyan
+	LDY <note_k
+	LDA >note_k
+	JSR vga_put_str
+
+	LDX #20
+	LDY #12
+	JSR vga_set_cursor
+	LDX #$F0		; Set color to black/light cyan
+	LDY <note_l
+	LDA >note_l
+	JSR vga_put_str
+
+	LDX #20
+	LDY #13
+	JSR vga_set_cursor
+	LDX #$F0		; Set color to black/light cyan
+	LDY <note_m
+	LDA >note_m
+	JSR vga_put_str
+
+	LDX #20
+	LDY #14
+	JSR vga_set_cursor
+	LDX #$F0		; Set color to black/light cyan
+	LDY <note_n
+	LDA >note_n
+	JSR vga_put_str
 	
+	RTS
+
+	
+;;;
+;;; Print ascii art
+;;; 
 tracker_print_art:
 	LDX #9
 	LDY #41
@@ -776,14 +912,11 @@ tracker_play_end:
 	
 ;;; 
 ;;; Play note in Ch A at position X
-;;; 
+;;;
 tracker_play_a:
 	;; Load note/octave
-	LDA $1000, X
-	;; Compensate for octave offset
-	SBC #$10
-	TAX
-	
+	LDX $1000, X
+	TXA
 	CMP #$FF
 	BNE tracker_play_a_note
 
@@ -791,36 +924,17 @@ tracker_play_a:
 	
 	RTS
 	
-tracker_play_a_note:
-
-	;; Store fine_value
-	LDA note_table_fine, X
-	STA $6A
-
-	;; Store coarse value
-	LDA note_table_coarse, X
-	STA $6B
-
-	LDX #$00
-	LDY $6A
-	JSR ay_send
-	
-	LDX #$01
-	LDY $6B
-	JSR ay_send
-
+tracker_play_a_note:	
+	JSR ay_wait
+	STX $2010
 	RTS
-
 ;;; 
 ;;; Play note in Ch B at position X
 ;;; 
 tracker_play_b:
 	;; Load note/octave
 	LDX $1100, X
-	;; Compensate for octave offset
-	SBC #$10
 	TXA
-	
 	CMP #$FF
 	BNE tracker_play_b_note
 
@@ -828,35 +942,17 @@ tracker_play_b:
 	
 	RTS
 	
-tracker_play_b_note:
-
-	;; Store fine_value
-	LDA note_table_fine, X
-	STA $6A
-
-	;; Store coarse value
-	LDA note_table_coarse, X
-	STA $6B
-
-	LDX #$02
-	LDY $6A
-	JSR ay_send
-	
-	LDX #$03
-	LDY $6B
-	JSR ay_send
-
+tracker_play_b_note:	
+	JSR ay_wait
+	STX $2011
 	RTS
-
+	
 ;;; 
 ;;; Play note in Ch C at position X
 ;;; 
 tracker_play_c:
 	;; Load note/octave
 	LDX $1200, X
-	;; Compensate for octave offset
-	SBC #$10
-
 	TXA
 	CMP #$FF
 	BNE tracker_play_c_note
@@ -866,24 +962,9 @@ tracker_play_c:
 	RTS
 	
 tracker_play_c_note:	
-	;; Store fine_value
-	LDA note_table_fine, X
-	STA $6A
-
-	;; Store coarse value
-	LDA note_table_coarse, X
-	STA $6B
-	
-	LDX #$04
-	LDY $6A
-	JSR ay_send
-	
-	LDX #$05
-	LDY $6B
-	JSR ay_send
-
+	JSR ay_wait
+	STX $2012
 	RTS
-
 
 ;;;
 ;;; Set 'now playing' cursor to X
