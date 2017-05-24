@@ -104,6 +104,7 @@ tracker_init:
 	STA ($2006)
 
 	JSR tracker_print_art
+	JSR tracker_print_table
 	
 	RTS
 
