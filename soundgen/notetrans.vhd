@@ -96,8 +96,8 @@ begin
   if rising_edge(clk) then
     if rst = '1' then
       state <= b"00";
-      translatednote <= x"00";
-      nte_done <= '1';
+      dataOut <= x"00";
+      nteDone <= '1';
       triggerCh <= '0';
       wr <= '0';
     else

@@ -64,8 +64,8 @@ begin
 
   -- Mulitplexed signals
   dataMux <= dataTransl when nte = '1' else dataReg;
-  rdyOut <= '1' when (nteDone = '1' and rdy = '1' and rstLong = '1') else '0';
-  rdyIn <= '1' when (nteDone = '0' and rdy = '1') else '0';
+  rdyOut <= '1' when (nte_done= '1' and rdy = '1' and rstLong = '1') else '0';
+  rdyIn <= '1' when (nte_done = '0' and rdy = '1') else '0';
   nte <= '0' when chReg = b"11"  else '1';
   
   -- Data register, Note register.
@@ -174,7 +174,7 @@ begin
     dataIn=>dataReg,
     wr=>wrInt,
     dataOut=>dataTransl,
-    nteDone=>nteDone,
+    nteDone=>nte_done,
     triggerCh => triggerCh
     );
 
