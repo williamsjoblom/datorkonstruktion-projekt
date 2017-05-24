@@ -6,12 +6,12 @@ use IEEE.NUMERIC_STD.ALL;
 
 entity notetrans is
   port(clk: in std_logic;               -- clock (duh!)
-       chreg: in unsigned(1 downto 0);               -- channel bits
+       chIn: in unsigned(1 downto 0);               -- channel bits
        rdy: in std_logic;              -- rdy
        rst: in std_logic;               -- reset
        nte: in std_logic;               -- note
-       datareg: in unsigned(7 downto 0);  -- in from data-reg
-       send: out std_logic;               -- write
+       dataIn: in unsigned(7 downto 0);  -- in from data-reg
+       wr: out std_logic;               -- write
        translatednote: out unsigned(7 downto 0);  -- out to write unit
        nte_done : out std_logic;
        triggerCh : out std_logic
@@ -29,14 +29,17 @@ architecture Behavioral of notetrans is
   -- Internal signals
   signal noteVector : unsigned(11 downto 0);
   
+  -------------------------------------------------
   signal nte_pulse : std_logic;
   signal nte_wait : std_logic;
 
   signal rdy_pulse : std_logic;
   signal rdy_wait : std_logic;
+  -------------------------------------------------
   
-  signal int_count : unsigned(1 downto 0);  -- keeps track of rdy order.
-  signal int_data : unsigned(7 downto 0);  -- read when wrt and nte is high.
+  signal state : unsigned(1 downto 0);  -- keeps track of rdy order.
+  signal dataReg : unsigned(7 downto 0);  -- read when wr and nte is high.
+  signal chReg : unsigned(1 downto 0); -- read when wr and nte is high.
 
 
 BEGIN
@@ -76,10 +79,12 @@ process(clk)
 begin
   if rising_edge(clk) then
     if rst = '1' then
-      int_data <= x"00";
+      dataReg <= x"00";
+      chReg <= b"00";
 
     elsif nte_pulse = '1' then
-      int_data <= unsigned(datareg);
+      dataReg <= unsigned(dataIn);
+      chReg <= chIn;
     end if;
   end if;
 end process;
@@ -90,39 +95,39 @@ process (clk)
 begin
   if rising_edge(clk) then
     if rst = '1' then
-      int_count <= b"00";
+      state <= b"00";
       translatednote <= x"00";
       nte_done <= '1';
       triggerCh <= '0';
-      send <= '0';
+      wr <= '0';
     else
       triggerCh <= '0';
       -- can directly determine the first register to rdy when note arrives.
       if nte_pulse = '1' then
-        nte_done <= '0';                    -- möjligt fel.
-        translatednote <= b"00000" & chreg & '0';    
+        nte_done <= '0';
+        translatednote <= b"00000" & chReg & '0';  -- Channel Fine-register
       elsif rdy_pulse = '1' then          
-        if int_count = b"00" then
-          int_count <= b"01";
-          translatednote <= noteVector(7 downto 0);
-          send <= '1';
+        if state = b"00" then
+          state <= b"01";
+          translatednote <= noteVector(7 downto 0);  -- Data Fine-tune
+          wr <= '1';
 
-        elsif int_count = b"01" then
-          int_count <= b"10";
-          translatednote <= b"00000" & chreg & '1';
-          send <= '1';
+        elsif state = b"01" then
+          state <= b"10";
+          translatednote <= b"00000" & chReg & '1'; -- Channel Coarse-register
+          wr <= '1';
 
-        elsif int_count = b"10" then
-          int_count <= b"11";
-          translatednote <= b"0000" & noteVector(11 downto 8);
-          send <= '1';
-        elsif int_count = b"11" then
-          int_count <= b"00";
+        elsif state = b"10" then
+          state <= b"11";
+          translatednote <= b"0000" & noteVector(11 downto 8); -- Data Coarse-tune
+          wr <= '1';
+        elsif state = b"11" then -- Reset State-machine and signal note done.
+          state <= b"00";
           nte_done <= '1';
           triggerCh <= '1';
         end if;
       else
-        send <= '0';
+        wr <= '0';
       end if;
     end if;
   end if;
@@ -130,7 +135,7 @@ end process;
 
   U0 : noteVec port map (
     nte => nte,
-    noteAddr => int_data,
+    noteAddr => dataReg,
     noteVector => noteVector
     );
 
