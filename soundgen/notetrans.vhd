@@ -12,8 +12,8 @@ entity notetrans is
        nte: in std_logic;               -- note
        dataIn: in unsigned(7 downto 0);  -- in from data-reg
        wr: out std_logic;               -- write
-       translatednote: out unsigned(7 downto 0);  -- out to write unit
-       nte_done : out std_logic;
+       dataOut: out unsigned(7 downto 0);  -- out to write unit
+       nteDone : out std_logic;
        triggerCh : out std_logic
        );
 end notetrans;
@@ -30,11 +30,11 @@ architecture Behavioral of notetrans is
   signal noteVector : unsigned(11 downto 0);
   
   -------------------------------------------------
-  signal nte_pulse : std_logic;
-  signal nte_wait : std_logic;
+  signal ntePulse : std_logic;
+  signal nteWait : std_logic;
 
-  signal rdy_pulse : std_logic;
-  signal rdy_wait : std_logic;
+  signal rdyPulse : std_logic;
+  signal rdyWait : std_logic;
   -------------------------------------------------
   
   signal state : unsigned(1 downto 0);  -- keeps track of rdy order.
@@ -49,27 +49,27 @@ process(clk)
 begin  -- process   (Kan vara fel här..)
   if rising_edge(clk) then
     if rst = '1' then
-      rdy_wait <= '0';
-      rdy_pulse <= '0';
-      nte_wait <= '0';
-      nte_pulse <= '0';
+      rdyWait <= '0';
+      rdyPulse <= '0';
+      nteWait <= '0';
+      ntePulse <= '0';
     end if;
 
-    rdy_pulse <= '0';
-    nte_pulse <= '0';
+    rdyPulse <= '0';
+    ntePulse <= '0';
 
-    if nte = '1' and nte_wait = '0' then 
-     nte_pulse <= '1';
-     nte_wait <= '1';
-    elsif nte = '0' and nte_wait = '1' then
-      nte_wait <= '0';
+    if nte = '1' and nteWait = '0' then 
+     ntePulse <= '1';
+     nteWait <= '1';
+    elsif nte = '0' and nteWait = '1' then
+      nteWait <= '0';
     end if;
     
-    if rdy = '1' and rdy_wait = '0' then 
-     rdy_pulse <= '1';
-     rdy_wait <= '1';
-    elsif rdy = '0' and rdy_wait = '1' then
-      rdy_wait <= '0';
+    if rdy = '1' and rdyWait = '0' then 
+     rdyPulse <= '1';
+     rdyWait <= '1';
+    elsif rdy = '0' and rdyWait = '1' then
+      rdyWait <= '0';
     end if;
   end if;
 end process;
@@ -82,7 +82,7 @@ begin
       dataReg <= x"00";
       chReg <= b"00";
 
-    elsif nte_pulse = '1' then
+    elsif ntePulse = '1' then
       dataReg <= unsigned(dataIn);
       chReg <= chIn;
     end if;
@@ -103,27 +103,27 @@ begin
     else
       triggerCh <= '0';
       -- can directly determine the first register to rdy when note arrives.
-      if nte_pulse = '1' then
-        nte_done <= '0';
-        translatednote <= b"00000" & chReg & '0';  -- Channel Fine-register
-      elsif rdy_pulse = '1' then          
+      if ntePulse = '1' then
+        nteDone <= '0';
+        dataOut <= b"00000" & chReg & '0';  -- Channel Fine-register
+      elsif rdyPulse = '1' then          
         if state = b"00" then
           state <= b"01";
-          translatednote <= noteVector(7 downto 0);  -- Data Fine-tune
+          dataOut <= noteVector(7 downto 0);  -- Data Fine-tune
           wr <= '1';
 
         elsif state = b"01" then
           state <= b"10";
-          translatednote <= b"00000" & chReg & '1'; -- Channel Coarse-register
+          dataOut <= b"00000" & chReg & '1'; -- Channel Coarse-register
           wr <= '1';
 
         elsif state = b"10" then
           state <= b"11";
-          translatednote <= b"0000" & noteVector(11 downto 8); -- Data Coarse-tune
+          dataOut <= b"0000" & noteVector(11 downto 8); -- Data Coarse-tune
           wr <= '1';
         elsif state = b"11" then -- Reset State-machine and signal note done.
           state <= b"00";
-          nte_done <= '1';
+          nteDone <= '1';
           triggerCh <= '1';
         end if;
       else
